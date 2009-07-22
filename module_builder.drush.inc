@@ -34,7 +34,8 @@ function module_builder_drush_command() {
       'hooks' => 'Short names of hooks, separated by spaces.',
     ),    
     'options' => array(
-      '--info' => 'Generate the info file rather than the module.',
+      '--build' => "Which file to generate: 'module', 'info', 'both'. Default is 'both' if writing files, 'module' if outputting only to terminal.",
+      '--write' => 'Write files to sites/all/modules. Will prompt to overwrite existing files; use --yes to force.',
       '--name' => 'Redable name of the module.',
       '--desc' => 'Description (for the admin module list).',
       '--help' => 'Module help text (for the system help).',
@@ -42,8 +43,16 @@ function module_builder_drush_command() {
       '--package' => 'Module package.',
     ),
     'examples' => array(
-      'drush mb my_module menu cron nodeapi' => 'Generate module code with hook_menu, hook_cron, hook_nodeapi.',
-      'drush mb my_module --info --name="My module" --dep="forum views"' => 'Generate module info.',
+      'drush mb my_module menu cron nodeapi' => 
+        'Generate module code with hook_menu, hook_cron, hook_nodeapi.',
+      'drush mb my_module --info --name="My module" --dep="forum views"' => 
+        'Generate module info with readable name and dependencies.',
+      'drush mb my_module menu cron --write --name="My module" --dep="forum views"' => 
+        'Generate both module files, write files and also output to terminal.',
+      'drush mb my_module menu cron --write ' => 
+        'Generate module code, write files and also output to terminal.',
+      'drush mb my_module menu cron --write --quiet --name="My module" --dep="forum views"' => 
+        'Generate both module files, write files and output nothing to terminal.',
     ),
   );
   return $items;
@@ -77,15 +86,31 @@ function module_builder_drush_help($section) {
  */
 function module_builder_callback() {
   $commands = func_get_args();
- 
-  // Swithc on whether the info file is requested or not.
-  if (drush_get_option('info')) {
-    module_builder_callback_info($commands);
-    return;
+  
+  // What to build
+  $build = drush_get_option('build');
+  
+  // The default is 'both' if we are writing, 'module' if outputting only to terminal.
+  if (!$build) {
+    if (drush_get_option('write')) {
+      $build = 'both';
+    }
+    else {
+      $build = 'module';      
+    }
   }
-  else {
-    module_builder_callback_module($commands);
-    return;
+  
+  switch ($build) {
+   case 'module':
+      module_builder_callback_module($commands);
+      return;  
+    case 'info':
+      module_builder_callback_info($commands);
+      return;
+    case 'both':
+      module_builder_callback_module($commands);
+      module_builder_callback_info($commands);
+      return;  
   }
 }
 
@@ -112,7 +137,7 @@ function module_builder_callback_module($commands) {
   
   $module_code = module_builder_generate_module($data);
   
-  drush_print_r($module_code);
+  module_builder_drush_output_code($data['module_root_name'], 'module', $module_code); 
 }
 
 /**
@@ -130,7 +155,43 @@ function module_builder_callback_info($commands) {
 
   $info_code = module_builder_generate_info($data);
 
-  drush_print_r($info_code);
+  module_builder_drush_output_code($data['module_root_name'], 'info', $info_code); 
+}
+
+/**
+ * Output generated text, to terminal or to file.
+ */
+function module_builder_drush_output_code($module_root_name, $type, $code) {
+  
+  $filename = $module_root_name . '.' . $type;
+  
+  // Output to terminal
+  if (!drush_get_option('quiet')) {
+    drush_print("Proposed $filename:");
+    drush_print_r($code);
+  }
+  
+  // Write to file
+  if (drush_get_option('write')) {
+    $module_dir = pm_dl_destination('module');
+    $module_dir .= $module_root_name;
+    
+    if (!is_dir($module_dir)) {
+      @drush_op('mkdir', $module_dir, 0777);
+      //drush_print("Module directory $module_dir created");
+    }
+
+    $filepath = $module_dir . '/' . $filename;
+
+    // if file exists, ask for whether to overwrite
+    if (file_exists($filepath)) {
+      if (!drush_confirm(dt('File ' . $filename . ' exists. Do you really want to overwrite?'))) {
+        return; 
+      }
+    }
+    
+    file_put_contents($filepath, $code);
+  }
 }
 
 /**
