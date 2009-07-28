@@ -134,7 +134,7 @@ function module_builder_callback_module($commands) {
   // Heap of defaults. Later find some nice way of asking for these. 
   $data['module_readable_name'] = ucfirst($data['module_root_name']);
   $data['module_short_description'] = 'Description';
-  
+    
   $module_code = module_builder_generate_module($data);
   
   module_builder_drush_output_code($data['module_root_name'], 'module', $module_code); 
