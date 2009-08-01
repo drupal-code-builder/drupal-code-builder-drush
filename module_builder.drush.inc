@@ -181,7 +181,8 @@ function module_builder_drush_output_code($module_root_name, $type, $code) {
     
   // Write to file
   // Add to file option implies write.
-  if (drush_get_option('write', 'add')) {
+  if (drush_get_option(array('write', 'add'))) {
+    
     $module_dir = pm_dl_destination('module');
     $module_dir .= $module_root_name;
     
