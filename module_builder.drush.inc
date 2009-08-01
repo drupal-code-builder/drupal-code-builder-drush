@@ -86,6 +86,11 @@ function module_builder_drush_help($section) {
  * where 'hookA' is the short name, ie 'menu' not hook_menu'.
  */
 function module_builder_callback() {
+  
+  include('../components/test.inc');
+  
+mb_hello();
+
   $commands = func_get_args();
   
   // What to build
