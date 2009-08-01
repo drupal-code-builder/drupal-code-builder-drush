@@ -34,8 +34,9 @@ function module_builder_drush_command() {
       'hooks' => 'Short names of hooks, separated by spaces.',
     ),    
     'options' => array(
-      '--build' => "Which file to generate: 'module', 'info', 'both'. Default is 'both' if writing files, 'module' if outputting only to terminal.",
-      '--write' => 'Write files to sites/all/modules. Will prompt to overwrite existing files; use --yes to force.',
+      '--build' => "Which file to generate: 'module', 'info', 'both'. Default is 'both' if writing new files, 'module' if appending to file or outputting only to terminal.",
+      '--write' => 'Write files to sites/all/modules. Will prompt to overwrite existing files; use --yes to force. Use --quiet to suppress output to the terminal.',
+      '--add' => 'Append hooks to module file. Implies --write --build=module. Warning: will not check hooks already exist.',
       '--name' => 'Redable name of the module.',
       '--desc' => 'Description (for the admin module list).',
       '--help' => 'Module help text (for the system help).',
@@ -90,6 +91,11 @@ function module_builder_callback() {
   // What to build
   $build = drush_get_option('build');
   
+  // If we are adding, 'module' is implied
+  if (drush_get_option('add')) {
+    $build = 'module';
+  }
+  
   // The default is 'both' if we are writing, 'module' if outputting only to terminal.
   if (!$build) {
     if (drush_get_option('write')) {
@@ -135,7 +141,7 @@ function module_builder_callback_module($commands) {
   $data['module_readable_name'] = ucfirst($data['module_root_name']);
   $data['module_short_description'] = 'Description';
     
-  $module_code = module_builder_generate_module($data);
+  $module_code = module_builder_generate_module($data, drush_get_option('add'));
   
   module_builder_drush_output_code($data['module_root_name'], 'module', $module_code); 
 }
@@ -171,8 +177,11 @@ function module_builder_drush_output_code($module_root_name, $type, $code) {
     drush_print_r($code);
   }
   
+  $write = drush_get_option('write');
+    
   // Write to file
-  if (drush_get_option('write')) {
+  // Add to file option implies write.
+  if (drush_get_option('write', 'add')) {
     $module_dir = pm_dl_destination('module');
     $module_dir .= $module_root_name;
     
@@ -182,6 +191,15 @@ function module_builder_drush_output_code($module_root_name, $type, $code) {
     }
 
     $filepath = $module_dir . '/' . $filename;
+    
+    // Add to file option
+    // if file doesn't exist, we skip this and silently write it anyway
+    if (drush_get_option('add') && file_exists($filepath)) {
+      $fh = fopen($filepath, 'a');
+      fwrite($fh, $code);
+      fclose($fh);
+      return;
+    }
 
     // if file exists, ask for whether to overwrite
     if (file_exists($filepath)) {
