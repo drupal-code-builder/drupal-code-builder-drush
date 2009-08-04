@@ -87,7 +87,7 @@ function module_builder_drush_help($section) {
  */
 function module_builder_callback() {
   // Include generating component file.
-  include(dirname(__FILE__) . '/../components/generate.inc');
+  include(dirname(__FILE__) . '/../includes/generate.inc');
   
   $commands = func_get_args();
   
@@ -145,6 +145,10 @@ function module_builder_callback_module($commands) {
   $data['module_short_description'] = 'Description';
     
   $module_code = module_builder_generate_module($data, drush_get_option('add'));
+  
+  if (is_null($module_code)) {
+    return drush_set_error('DRUSH_NOT_COMPLETED', 'No hook definitions found. You need to download hook definitions before using this module.');
+  }
   
   module_builder_drush_output_code($data['module_root_name'], 'module', $module_code); 
 }
