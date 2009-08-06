@@ -56,6 +56,15 @@ function module_builder_drush_command() {
         'Generate both module files, write files and output nothing to terminal.',
     ),
   );
+  
+  // TODO: add a download hook data command
+  
+  // TODO: add a hook description listing command
+  
+  $items['mbdebug'] = array(
+    'callback' => 'module_builder_callback_debug',
+  );
+  
   return $items;
 }
 
@@ -236,4 +245,12 @@ function drush_input($msg, $required = FALSE, $indent = 0) {
     print 'we never get here wtf?';
     print str_repeat(' ', $indent) . (string)$msg . ": ";
   }
+}
+
+/**
+ * Just for testing stuff on the commandline while developing the module.
+ */
+function module_builder_callback_debug() {
+  include(dirname(__FILE__) . '/../includes/process.inc');
+ 
 }
