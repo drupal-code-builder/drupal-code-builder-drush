@@ -266,7 +266,7 @@ function module_builder_callback_hook_list() {
   // Include generating component file.
   include(dirname(__FILE__) . '/../includes/process.inc');
 
-  $data = module_builder_get_hook_descriptions();
+  $data = module_builder_get_hook_data();
   
   print_r($data);
   
