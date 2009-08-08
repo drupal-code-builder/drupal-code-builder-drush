@@ -345,9 +345,6 @@ function module_builder_callback_doc_hooks() {
  */
 function module_builder_callback_debug() {
   include(dirname(__FILE__) . '/../includes/process.inc');
-  $data = module_builder_get_hook_descriptions();
-  print_r($data);
-
 
   $data = module_builder_get_hook_data();
   print_r($data);
