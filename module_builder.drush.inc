@@ -59,7 +59,16 @@ function module_builder_drush_command() {
   
   // TODO: add a download hook data command
   
-  // TODO: add a hook description listing command
+  $items['hooks'] = array(
+    'callback' => 'module_builder_callback_hook_list',
+    'description' => "List the hooks module_builder knows about.",
+  );
+
+  $items['dochooks'] = array(
+    'callback' => 'module_builder_callback_doc_hooks',
+    'description' => "Adds hook header docs where they are missing.",
+  );
+
   
   $items['mbdebug'] = array(
     'callback' => 'module_builder_callback_debug',
@@ -247,10 +256,91 @@ function drush_input($msg, $required = FALSE, $indent = 0) {
   }
 }
 
+/** 
+ * Callback to list known hooks.
+ * Needs making pretty.
+ */
+function module_builder_callback_hook_list() {
+  // Include generating component file.
+  include(dirname(__FILE__) . '/../includes/process.inc');
+
+  $data = module_builder_get_hook_descriptions();
+  
+  print_r($data);
+  
+}
+
+/** 
+ * Callback to add doc headers to existing hooks.
+ */
+function module_builder_callback_doc_hooks() {
+  $commands = func_get_args();
+  
+  // The first argument is the module machine name.
+  $module_root_name = array_shift($commands);  
+  
+  $filepath = drupal_get_path('module', $module_root_name);
+
+  //$old_dir = getcwd();
+  //chdir($filepath);
+  $files = scandir($filepath);
+
+  foreach ($files as $filename) {
+    $ext = substr(strrchr($filename, '.'), 1);
+    if (in_array($ext, array('module', 'install', 'inc'))) {
+      $module_files[] = $filename;
+    }
+  }
+  
+  // Include generating component file.
+  include(dirname(__FILE__) . '/../includes/process.inc');
+  
+  $hook_names = module_builder_get_hook_names('short');
+
+  $pattern = '[(?<! \* / \n )' . # no PHP doc: single quoted so \n works
+    "function \ image_gallery _ ( \w * )  # function declaration: capture hook name
+     ]mx";
+    
+  foreach ($module_files as $filename) {
+    $code = file_get_contents($filepath . '/' . $filename);
+    //print $code;
+    
+    // Get functions that have no docs.
+    preg_match_all($pattern, $code, $function_names);
+    
+    // Get only those that are actual hooks.
+    $bad_hooks = array_intersect($function_names[1], $hook_names);
+    
+    // For each hook that has no documentation.
+    foreach ($bad_hooks as $hook_name) {
+      $doc = <<<EOT
+/**
+ * Implementation of hook_$hook_name().
+ */
+
+EOT;
+      $pattern2 = "[(?= function \ image_gallery _ $hook_name )]x";
+      $code = preg_replace($pattern2, $doc, $code);
+    }
+
+    if (!drush_get_option('quiet')) {
+      print $code;
+    }
+    
+    if (!drush_confirm(dt('Are you sure you want to overwrite ' . $filename . '?'))) {
+      return; 
+    }
+    file_put_contents($filename, $code);  
+  }
+}
+
 /**
  * Just for testing stuff on the commandline while developing the module.
  */
 function module_builder_callback_debug() {
   include(dirname(__FILE__) . '/../includes/process.inc');
+
+  $data = module_builder_get_hook_names('short');
+  print_r($data);
  
 }
