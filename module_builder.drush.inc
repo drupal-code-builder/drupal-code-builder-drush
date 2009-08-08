@@ -328,9 +328,9 @@ EOT;
     }
     
     if (!drush_confirm(dt('Are you sure you want to overwrite ' . $filename . '?'))) {
-      return; 
+      continue; 
     }
-    file_put_contents($filename, $code);  
+    file_put_contents($filepath . '/' .$filename, $code);  
   }
 }
 
