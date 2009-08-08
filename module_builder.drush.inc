@@ -292,8 +292,9 @@ function module_builder_callback_doc_hooks() {
     }
   }
   
-  // Include generating component file.
-  include(dirname(__FILE__) . '/../includes/process.inc');
+  // Include component files.
+  include_once(dirname(__FILE__) . '/../includes/process.inc');
+  include_once(dirname(__FILE__) . '/../includes/generate.inc');
   
   $hook_names = module_builder_get_hook_names('short');
 
@@ -313,12 +314,7 @@ function module_builder_callback_doc_hooks() {
     
     // For each hook that has no documentation.
     foreach ($bad_hooks as $hook_name) {
-      $doc = <<<EOT
-/**
- * Implementation of hook_$hook_name().
- */
-
-EOT;
+      $doc = module_builder_generate_hook_doxy("hook_$hook_name");
       $pattern2 = "[(?= function \ image_gallery _ $hook_name )]x";
       $code = preg_replace($pattern2, $doc, $code);
     }
@@ -327,6 +323,7 @@ EOT;
       print $code;
     }
     
+    print 'Added hook documentation headers for: ' . implode(', ', $bad_hooks) . "\n";
     if (!drush_confirm(dt('Are you sure you want to overwrite ' . $filename . '?'))) {
       continue; 
     }
