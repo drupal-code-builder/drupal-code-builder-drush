@@ -54,6 +54,8 @@ function module_builder_drush_command() {
         'Generate module code, write files and also output to terminal.',
       'drush mb my_module menu cron --write --quiet --name="My module" --dep="forum views"' => 
         'Generate both module files, write files and output nothing to terminal.',
+      'drush mb my_module menu cron --add'=> 
+        'Generate code for hook_cron and add it to the existing my_module.module file.',
     ),
   );
   
@@ -66,7 +68,7 @@ function module_builder_drush_command() {
 
   $items['dochooks'] = array(
     'callback' => 'module_builder_callback_doc_hooks',
-    'description' => "Adds hook header docs where they are missing.",
+    'description' => "Adds comment headers to hooks that need them in the given module.",
   );
 
   
