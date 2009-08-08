@@ -268,7 +268,14 @@ function module_builder_callback_hook_list() {
 
   $data = module_builder_get_hook_data();
   
-  print_r($data);
+  foreach ($data as $file => $hooks) {
+    drush_print("File $file:", 2);
+    foreach ($hooks as $key => $hook) {
+      drush_print($hook['name'] . ': ' . $hook['description'], 4);
+    }
+  }
+
+  //print_r($data);
   
 }
 
