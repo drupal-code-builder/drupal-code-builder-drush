@@ -62,6 +62,9 @@ function module_builder_drush_command() {
   $items['mbdl'] = array(
     'callback' => 'module_builder_callback_hook_download',
     'description' => "Update module_builder hook data.",
+    'options' => array(
+      '--hookdir' => 'Path to save downloaded files.',
+    ),
   );
   
   $items['hooks'] = array(
@@ -261,12 +264,24 @@ function drush_input($msg, $required = FALSE, $indent = 0) {
   }
 }
 
+/**
+ * Callback for downloading hook data.
+ */
 function module_builder_callback_hook_download() {
   // Include component file.
   include_once(dirname(__FILE__) . '/../includes/update.inc');
-  $return = module_builder_update_documentation();
+  
+  if (drush_get_option(array('hookdir'))) {
+    $directory = drush_get_option(array('hookdir'));
+  }
+  else {
+    // TODO: check enough bootstrap!
+    $directory = file_create_path(variable_get('module_builder_hooks_directory', 'hooks'));
+  }
+  
+  $return = module_builder_update_documentation($directory);
   if (!$return) {
-    drush_set_error('Problem downloading hooks.');
+    return drush_set_error('Problem downloading hooks.');
   }
   else {
     drush_print('Hooks downloaded');
