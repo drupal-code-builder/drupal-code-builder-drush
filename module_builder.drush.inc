@@ -27,7 +27,7 @@ function module_builder_drush_command() {
 
   // the key in the $items array is the name of the command.
   $items['mb'] = array(
-    'callback' => 'module_builder_callback',
+    'callback' => 'module_builder_callback_build',
     'description' => "Generate the code for a new Drupal module, including file headers and hook implementations.",
     'arguments' => array(
       'module name' => 'The machine name of the module.',
@@ -59,7 +59,10 @@ function module_builder_drush_command() {
     ),
   );
   
-  // TODO: add a download hook data command
+  $items['mbdl'] = array(
+    'callback' => 'module_builder_callback_hook_download',
+    'description' => "Update module_builder hook data.",
+  );
   
   $items['hooks'] = array(
     'callback' => 'module_builder_callback_hook_list',
@@ -105,7 +108,7 @@ function module_builder_drush_help($section) {
  * $drush mb machine_name hookA hookB hookC
  * where 'hookA' is the short name, ie 'menu' not hook_menu'.
  */
-function module_builder_callback() {
+function module_builder_callback_build() {
   // Include generating component file.
   include(dirname(__FILE__) . '/../includes/generate.inc');
   
@@ -255,6 +258,18 @@ function drush_input($msg, $required = FALSE, $indent = 0) {
     }
     print 'we never get here wtf?';
     print str_repeat(' ', $indent) . (string)$msg . ": ";
+  }
+}
+
+function module_builder_callback_hook_download() {
+  // Include component file.
+  include_once(dirname(__FILE__) . '/../includes/update.inc');
+  $return = module_builder_update_documentation();
+  if (!$return) {
+    drush_set_error('Problem downloading hooks.');
+  }
+  else {
+    drush_print('Hooks downloaded');
   }
 }
 
