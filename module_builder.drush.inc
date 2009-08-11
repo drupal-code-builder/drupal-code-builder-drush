@@ -66,7 +66,7 @@ function module_builder_drush_command() {
     'callback' => 'module_builder_callback_hook_download',
     'description' => "Update module_builder hook data.",
     'options' => array(
-      '--hookdir' => 'Path to save downloaded files.',
+      '--hookdir' => "Path to save downloaded files. Defaults to 'files/hooks'.",
     ),
   );
   
@@ -83,6 +83,7 @@ function module_builder_drush_command() {
   
   $items['mbdebug'] = array(
     'callback' => 'module_builder_callback_debug',
+    'description' => "Debug module builder. Does whatever was needed at the time.",
   );
   
   return $items;
@@ -296,7 +297,6 @@ function module_builder_callback_hook_download() {
 
 /** 
  * Callback to list known hooks.
- * Needs making pretty.
  */
 function module_builder_callback_hook_list() {
   // Include generating component file.
