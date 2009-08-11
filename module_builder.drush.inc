@@ -386,8 +386,8 @@ function module_builder_callback_doc_hooks() {
  * Just for testing stuff on the commandline while developing the module.
  */
 function module_builder_callback_debug() {
-  include(dirname(__FILE__) . '/../includes/update.inc');
+  include(dirname(__FILE__) . '/../includes/process.inc');
 
-  $data = module_builder_get_hook_files();
+  $data = module_builder_get_hook_data();
   print_r($data);
 }
