@@ -39,6 +39,7 @@ function module_builder_drush_command() {
     'options' => array(
       '--build' => "Which file to generate: 'module', 'info', 'both'. Default is 'both' if writing new files, 'module' if appending to file or outputting only to terminal.",
       '--write' => 'Write files to sites/all/modules. Will prompt to overwrite existing files; use --yes to force. Use --quiet to suppress output to the terminal.',
+      '--go' => 'Write both module files and enable the new module. Take two commands into the shower? Not me.',
       '--add' => 'Append hooks to module file. Implies --write --build=module. Warning: will not check hooks already exist.',
       '--name' => 'Redable name of the module.',
       '--desc' => 'Description (for the admin module list).',
@@ -131,7 +132,7 @@ function module_builder_callback_build() {
   
   // The default is 'both' if we are writing, 'module' if outputting only to terminal.
   if (!$build) {
-    if (drush_get_option('write')) {
+    if (drush_get_option(array('write', 'go'))) {
       $build = 'both';
     }
     else {
@@ -142,14 +143,18 @@ function module_builder_callback_build() {
   switch ($build) {
    case 'module':
       module_builder_callback_module($commands);
-      return;  
+      break;  
     case 'info':
       module_builder_callback_info($commands);
-      return;
+      break;
     case 'both':
       module_builder_callback_module($commands);
       module_builder_callback_info($commands);
-      return;  
+      break;  
+  }
+
+  if (drush_get_option('go')) {
+    pm_module_manage(array(array_shift($commands)), TRUE);
   }
 }
 
@@ -219,7 +224,8 @@ function module_builder_drush_output_code($module_root_name, $type, $code) {
     
   // Write to file
   // Add to file option implies write.
-  if (drush_get_option(array('write', 'add'))) {
+  // Write & go option implies write.
+  if (drush_get_option(array('write', 'add', 'go'))) {
     
     $module_dir = pm_dl_destination('module');
     $module_dir .= $module_root_name;
