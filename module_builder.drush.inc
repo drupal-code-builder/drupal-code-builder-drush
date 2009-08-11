@@ -207,7 +207,7 @@ function module_builder_callback_info($commands) {
 
   $info_code = module_builder_generate_info($data);
 
-  module_builder_drush_output_code($data['module_root_name'], $data['module_root_name'] . 'info', $info_code); 
+  module_builder_drush_output_code($data['module_root_name'], $data['module_root_name'] . '.info', $info_code); 
 }
 
 /**
