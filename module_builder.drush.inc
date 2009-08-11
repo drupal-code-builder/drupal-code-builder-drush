@@ -285,7 +285,7 @@ function module_builder_callback_hook_download() {
     return drush_set_error('Problem downloading hooks.');
   }
   else {
-    drush_print('Hooks downloaded');
+    drush_print("Hook files have been downloaded to $directory and processed.");
   }
 }
 
