@@ -141,7 +141,7 @@ function module_builder_callback_build() {
   }
   
   switch ($build) {
-   case 'module':
+   case 'code':
       module_builder_callback_module($commands);
       break;  
     case 'info':
