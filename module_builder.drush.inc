@@ -186,7 +186,10 @@ function module_builder_callback_module($commands) {
     return drush_set_error('DRUSH_NOT_COMPLETED', 'No hook definitions found. You need to download hook definitions before using this module.');
   }
   
-  module_builder_drush_output_code($data['module_root_name'], 'module', $module_code); 
+  foreach ($module_code as $filename => $code) {
+    module_builder_drush_output_code($data['module_root_name'], $filename, $code);   
+  }
+
 }
 
 /**
@@ -204,16 +207,14 @@ function module_builder_callback_info($commands) {
 
   $info_code = module_builder_generate_info($data);
 
-  module_builder_drush_output_code($data['module_root_name'], 'info', $info_code); 
+  module_builder_drush_output_code($data['module_root_name'], $data['module_root_name'] . 'info', $info_code); 
 }
 
 /**
  * Output generated text, to terminal or to file.
  */
-function module_builder_drush_output_code($module_root_name, $type, $code) {
-  
-  $filename = $module_root_name . '.' . $type;
-  
+function module_builder_drush_output_code($module_root_name, $filename, $code) {
+    
   // Output to terminal
   if (!drush_get_option('quiet')) {
     drush_print("Proposed $filename:");
