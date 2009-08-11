@@ -6,6 +6,9 @@
  *   Module builder drush commands.
  *
  */
+ 
+  // Include generating component file.
+  include(dirname(__FILE__) . '/../includes/common.inc');
 
 /**
  * Implementation of hook_drush_command().
@@ -279,6 +282,8 @@ function module_builder_callback_hook_download() {
     // TODO: check enough bootstrap!
     $directory = file_create_path(variable_get('module_builder_hooks_directory', 'hooks'));
   }
+  
+  _module_builder_check_settings($directory);
   
   $return = module_builder_update_documentation($directory);
   if (!$return) {
