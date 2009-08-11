@@ -7,8 +7,8 @@
  *
  */
  
-  // Include generating component file.
-  include(dirname(__FILE__) . '/../includes/common.inc');
+  // Include common code.
+  include_once(dirname(__FILE__) . '/../includes/common.inc');
 
 /**
  * Implementation of hook_drush_command().
