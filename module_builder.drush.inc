@@ -172,6 +172,7 @@ function module_builder_callback_module($commands) {
     
   $module_code = module_builder_generate_module($data, drush_get_option('add'));
   
+  // TODO: test this sooner!
   if (is_null($module_code)) {
     return drush_set_error('DRUSH_NOT_COMPLETED', 'No hook definitions found. You need to download hook definitions before using this module.');
   }
