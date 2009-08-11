@@ -37,7 +37,7 @@ function module_builder_drush_command() {
       'hooks' => 'Short names of hooks, separated by spaces.',
     ),    
     'options' => array(
-      '--build' => "Which file to generate: 'module', 'info', 'both'. Default is 'both' if writing new files, 'module' if appending to file or outputting only to terminal.",
+      '--build' => "Which file type to generate: 'code', 'info', 'both'. 'code' will generate whichever files the given hooks request. Default is 'both' if writing new files, 'code' if appending to file or outputting only to terminal.",
       '--write' => 'Write files to sites/all/modules. Will prompt to overwrite existing files; use --yes to force. Use --quiet to suppress output to the terminal.',
       '--go' => 'Write both module files and enable the new module. Take two commands into the shower? Not me.',
       '--add' => 'Append hooks to module file. Implies --write --build=module. Warning: will not check hooks already exist.',
@@ -127,7 +127,7 @@ function module_builder_callback_build() {
   
   // If we are adding, 'module' is implied
   if (drush_get_option('add')) {
-    $build = 'module';
+    $build = 'code';
   }
   
   // The default is 'both' if we are writing, 'module' if outputting only to terminal.
@@ -136,7 +136,7 @@ function module_builder_callback_build() {
       $build = 'both';
     }
     else {
-      $build = 'module';      
+      $build = 'code';      
     }
   }
   
