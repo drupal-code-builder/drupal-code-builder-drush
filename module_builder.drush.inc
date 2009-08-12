@@ -46,7 +46,7 @@ function module_builder_drush_command() {
         "Default is 'all' if writing new files, 'code' if appending to file or outputting only to terminal.",
       '--write' => 'Write files to sites/all/modules. Will prompt to overwrite existing files; use --yes to force. Use --quiet to suppress output to the terminal.',
       '--go' => 'Write both module files and enable the new module. Take two commands into the shower? Not me.',
-      '--add' => 'Append hooks to module file. Implies --write --build=module. Warning: will not check hooks already exist. TODO: only works on module file for now.',
+      '--add' => 'Append hooks to module file. Implies --write --build=code. Warning: will not check hooks already exist.',
       '--name' => 'Redable name of the module.',
       '--desc' => 'Description (for the admin module list).',
       '--help' => 'Module help text (for the system help).',
