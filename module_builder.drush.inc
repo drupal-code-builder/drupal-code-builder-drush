@@ -37,10 +37,16 @@ function module_builder_drush_command() {
       'hooks' => 'Short names of hooks, separated by spaces.',
     ),    
     'options' => array(
-      '--build' => "Which file type to generate: 'code', 'info', 'both'. 'code' will generate whichever files the given hooks request. Default is 'both' if writing new files, 'code' if appending to file or outputting only to terminal.",
+      '--build' => "Which file type to generate: 'all', 'code', 'info', 'FILE'. " .
+        "'all' generates everything: info and any code files needed by the requested hooks. " .
+        "'code' generates code files as needed. " .
+        "'info' makes just the info file. " .
+        "'module', 'install' make just the foo.module or foo.install files. " .
+        "'If custom modules define other files to output, you can request those too, omitting the module root name part and any .inc extension, eg 'module_builder' for 'foo.module_builder.inc. " .
+        "Default is 'all' if writing new files, 'code' if appending to file or outputting only to terminal.",
       '--write' => 'Write files to sites/all/modules. Will prompt to overwrite existing files; use --yes to force. Use --quiet to suppress output to the terminal.',
       '--go' => 'Write both module files and enable the new module. Take two commands into the shower? Not me.',
-      '--add' => 'Append hooks to module file. Implies --write --build=module. Warning: will not check hooks already exist.',
+      '--add' => 'Append hooks to module file. Implies --write --build=module. Warning: will not check hooks already exist. TODO: only works on module file for now.',
       '--name' => 'Redable name of the module.',
       '--desc' => 'Description (for the admin module list).',
       '--help' => 'Module help text (for the system help).',
@@ -85,6 +91,7 @@ function module_builder_drush_command() {
   $items['mbdebug'] = array(
     'callback' => 'module_builder_callback_debug',
     'description' => "Debug module builder. Does whatever was needed at the time.",
+    //'bootstrap' => DRUSH_BOOTSTRAP_DRUSH, // No bootstrap at all.
   );
   
   return $items;
@@ -125,32 +132,55 @@ function module_builder_callback_build() {
   // What to build
   $build = drush_get_option('build');
   
-  // If we are adding, 'module' is implied
-  if (drush_get_option('add')) {
-    $build = 'code';
-  }
-  
-  // The default is 'both' if we are writing, 'module' if outputting only to terminal.
+  // write options:
+  // - all -- everything we can do
+  // - code -- code files, not info (module + install _ ..?)
+  // - info -- only info fole
+  // - module -- only module file
+  // - install -- only install file
+  // - ??? whatever hooks need
+    
+  // No build: set nice default.
   if (!$build) {
-    if (drush_get_option(array('write', 'go'))) {
-      $build = 'both';
+    // If we are adding, 'code' is implied
+    if (drush_get_option('add')) {
+      $build = 'code';
     }
+    // If we are writing or going, all.
+    elseif (drush_get_option(array('write', 'go'))) {
+      $build = 'all';
+    }
+    // Otherwise, outputting to terminal: only module
     else {
-      $build = 'code';      
+      $build = 'code';     
     }
   }
   
+  //print_r($build);
+  
+  // Make a list  
+  $build_list = explode(' ', $build);
+  
+  // Multi build: set a single string to switch on below.
+  if (count($build_list) > 1) {
+    $build = 'code';  
+  }
+  
+  //print_r($build_list);  
+    
   switch ($build) {
-   case 'code':
-      module_builder_callback_module($commands);
-      break;  
     case 'info':
+      // info and stop
       module_builder_callback_info($commands);
       break;
-    case 'both':
-      module_builder_callback_module($commands);
+    case 'all':
+      // info and fall through
       module_builder_callback_info($commands);
-      break;  
+    case 'code':
+      // this is just here to look pretty
+    default:
+      // anything else, eg module, install etc
+      module_builder_callback_module($commands, $build_list);    
   }
 
   if (drush_get_option('go')) {
@@ -160,8 +190,12 @@ function module_builder_callback_build() {
 
 /**
  * Handles the callback for module code generation.
+ *
+ * @param $build_list
+ *    An array of requested code files to output
+ *    'code' or 'all' means all of them.
  */  
-function module_builder_callback_module($commands) {
+function module_builder_callback_module($commands, $build_list) {
   // The first argument is the module machine name.
   $data['module_root_name'] = array_shift($commands);  
     
@@ -185,11 +219,60 @@ function module_builder_callback_module($commands) {
   if (is_null($module_code)) {
     return drush_set_error('DRUSH_NOT_COMPLETED', 'No hook definitions found. You need to download hook definitions before using this module.');
   }
-  
-  foreach ($module_code as $filename => $code) {
-    module_builder_drush_output_code($data['module_root_name'], $filename, $code);   
-  }
 
+  //print_r($build_list);  
+  if (!in_array($build_list[0], array('code', 'all'))) {
+    // We have keys in module_code that are entire filenames, eg 'foo.install'
+    // We have array items in build_list that are sort of file endings, eg 'install'
+    // Match them up!
+    $requested_files = module_builder_requested_filenames($data['module_root_name'], array_keys($module_code), $build_list);
+  }
+  else {
+    // Meh we want the lot.
+    $requested_files = array_keys($module_code);
+  }
+  //print_r($requested_files);  
+
+  foreach ($requested_files as $filename) {
+    $code = $module_code[$filename];
+    module_builder_drush_output_code($data['module_root_name'], $filename, $code);   
+    
+  }
+  return;
+}
+
+/**
+ * Figure out which of $real filenames are being requested in the list of $abbrev'iated ones.
+ *
+ * @return
+ *  A flat array of filenames from $real. Those whose abreviations were not found.
+ *  in $abbrev are removed.
+ */
+function module_builder_requested_filenames($module_root_name, $real, $abbrev) {
+  //print_r($real);
+  
+  foreach ($real as $r) {
+    $p = preg_replace(
+      array(
+        "[^$module_root_name\.]", // module_name. at start
+        '[\.inc$]'), // possibly .inc at end
+      array('', ''),
+      $r
+    );
+    $processed[$r] = $p;
+    // build an array with the real names as keys
+    // and the abbrevs as values 
+  }
+  //print_r($processed);
+  //print_r($abbrev);
+  
+  // Intersecting thorws away values that are not in $abbrev
+  // while keeping the real filename keys.
+  $result = array_intersect($processed, $abbrev);
+   
+  //print_r($result); 
+  // We only care about the keys anyway
+  return array_keys($result);
 }
 
 /**
@@ -388,7 +471,13 @@ function module_builder_callback_doc_hooks() {
  */
 function module_builder_callback_debug() {
   include(dirname(__FILE__) . '/../includes/process.inc');
-
-  $data = module_builder_get_hook_data();
-  print_r($data);
+//variable_get('module_builder_hooks_directory', NULL);
+  //$data = module_builder_get_hook_data();
+  //print_r($data);
+  print 'fdfd';
+  
+  $write = drush_get_option('write');
+  print $write;
+  
+  
 }
