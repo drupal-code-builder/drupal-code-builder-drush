@@ -42,6 +42,7 @@ function module_builder_drush_command() {
       'hooks' => 'Short names of hooks, separated by spaces.',
     ),    
     'options' => array(
+      '--data' => "Location to read hook data. May be absolute, or relative to Drupal files dir. Defaults to 'files/hooks'.",
       '--build' => "Which file type to generate: 'all', 'code', 'info', 'FILE'. " .
         "'all' generates everything: info and any code files needed by the requested hooks. " .
         "'code' generates code files as needed. " .
@@ -78,7 +79,7 @@ function module_builder_drush_command() {
     'callback' => 'module_builder_callback_hook_download',
     'description' => "Update module_builder hook data.",
     'options' => array(
-      '--hookdir' => "Path to save downloaded files. Defaults to 'files/hooks'.",
+      '--data' => "Location to save downloaded files. May be absolute, or relative to Drupal files dir. Defaults to 'files/hooks'.",
     ),
   );
   
@@ -370,18 +371,9 @@ function drush_input($msg, $required = FALSE, $indent = 0) {
 function module_builder_callback_hook_download() {
   // Include component file.
   include_once(dirname(__FILE__) . '/../includes/update.inc');
-  
-  if (drush_get_option(array('hookdir'))) {
-    $directory = drush_get_option(array('hookdir'));
-  }
-  else {
-    // TODO: check enough bootstrap!
-    $directory = file_create_path(variable_get('module_builder_hooks_directory', 'hooks'));
-  }
-  
-  _module_builder_check_settings($directory);
-  
-  $return = module_builder_update_documentation($directory);
+
+  $directory = _module_builder_get_hooks_directory();  
+  $return = module_builder_update_documentation();
   if (!$return) {
     return drush_set_error('Problem downloading hooks.');
   }
@@ -407,7 +399,6 @@ function module_builder_callback_hook_list() {
   }
 
   //print_r($data);
-  
 }
 
 /** 
@@ -481,7 +472,7 @@ function module_builder_callback_debug() {
   //print_r($data);
   //print 'fdfd';
   
-  $dir = _module_builder_get_hooks_directory_drush();
+  $dir = _module_builder_get_hooks_directory();
   print $dir;
   
   
