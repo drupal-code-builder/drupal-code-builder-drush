@@ -7,8 +7,13 @@
  *
  */
  
-  // Include common code.
-  include_once(dirname(__FILE__) . '/../includes/common.inc');
+/**
+ * Initialization.
+ */ 
+// Include common code.
+include_once(dirname(__FILE__) . '/../includes/common.inc');
+// Set our environment.
+define('MODULE_BUILDER_ENV', 'drush');
 
 /**
  * Implementation of hook_drush_command().
@@ -470,14 +475,14 @@ function module_builder_callback_doc_hooks() {
  * Just for testing stuff on the commandline while developing the module.
  */
 function module_builder_callback_debug() {
-  include(dirname(__FILE__) . '/../includes/process.inc');
+//  include(dirname(__FILE__) . '/../includes/process.inc');
 //variable_get('module_builder_hooks_directory', NULL);
   //$data = module_builder_get_hook_data();
   //print_r($data);
-  print 'fdfd';
+  //print 'fdfd';
   
-  $write = drush_get_option('write');
-  print $write;
+  $dir = _module_builder_get_hooks_directory_drush();
+  print $dir;
   
   
 }
