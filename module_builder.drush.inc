@@ -93,6 +93,10 @@ function module_builder_drush_command() {
     'description' => "Adds comment headers to hooks that need them in the given module.",
   );
 
+  $items['docparams'] = array(
+    'callback' => 'module_builder_callback_doc_params',
+    'description' => "Adds params... WIP!",
+  );
   
   $items['mbdebug'] = array(
     'callback' => 'module_builder_callback_debug',
@@ -476,4 +480,78 @@ function module_builder_callback_debug() {
   print $dir;
   
   
+}
+
+
+/**
+ * WORK IN PROGRESS
+ * Add function headers wherever needed with params.
+ */
+function module_builder_callback_doc_params() {
+  $commands = func_get_args();
+  
+  
+  print 'wip!!!';
+  return;
+  
+  // The first argument is the module machine name.
+  $module_root_name = array_shift($commands);  
+  
+  $filepath = drupal_get_path('module', $module_root_name);
+
+  //$old_dir = getcwd();
+  //chdir($filepath);
+  $files = scandir($filepath);
+
+  foreach ($files as $filename) {
+    $ext = substr(strrchr($filename, '.'), 1);
+    if (in_array($ext, array('module', 'install', 'inc'))) {
+      $module_files[] = $filename;
+    }
+  }
+  
+  // Include component files.
+  include_once(dirname(__FILE__) . '/../includes/process.inc');
+  include_once(dirname(__FILE__) . '/../includes/generate.inc');
+  
+  $hook_names = module_builder_get_hook_names('short');
+
+  $pattern = '[
+      / \* \* \n    # start phpdoc
+      \ \* \ ( .* ) \n  # first line of phpdoc: capture the text
+  (?: \ \* .* \n )* # lines of phpdoc
+      \ \* /  \n    # end phpdoc
+      function \ ( \w* ) \( ( .* ) \) \  { # function declaration: capture both entire declaration and name
+  ]mx'; 
+    
+  foreach ($module_files as $filename) {
+    $code = file_get_contents($filepath . '/' . $filename);
+    //print $code;
+    
+    // Get functions that have no docs.
+    preg_match_all($pattern, $code, $function_names);
+    
+    
+    
+    
+    // Get only those that are actual hooks.
+    //$bad_hooks = array_intersect($function_names[1], $hook_names);
+    
+    // For each hook that has no documentation.
+    foreach ($bad_hooks as $hook_name) {
+      $doc = module_builder_generate_hook_doxy("hook_$hook_name");
+      $pattern2 = "[(?= function \ image_gallery _ $hook_name )]x";
+      $code = preg_replace($pattern2, $doc, $code);
+    }
+
+    if (!drush_get_option('quiet')) {
+     // print $code;
+    }
+    
+    print 'Added hook documentation headers for: ' . implode(', ', $bad_hooks) . "\n";
+    if (!drush_confirm(dt('Are you sure you want to overwrite ' . $filename . '?'))) {
+      continue; 
+    }
+    //file_put_contents($filepath . '/' .$filename, $code);  
+  }
 }
