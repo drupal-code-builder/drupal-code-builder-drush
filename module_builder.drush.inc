@@ -397,7 +397,7 @@ function module_builder_callback_hook_list() {
   $data = module_builder_get_hook_data();
   
   foreach ($data as $file => $hooks) {
-    drush_print("File $file:", 2);
+    drush_print("Group $file:", 2);
     foreach ($hooks as $key => $hook) {
       drush_print($hook['name'] . ': ' . $hook['description'], 4);
     }
@@ -552,7 +552,8 @@ function module_builder_callback_debug() {
   //print 'fdfd';
   
   include(dirname(__FILE__) . '/../includes/process.inc');
+  include(dirname(__FILE__) . '/../includes/update.inc');
   
-  module_builder_process_hook_data();
+  module_builder_update_documentation();
   return;  
 }
