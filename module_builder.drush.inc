@@ -81,6 +81,7 @@ function module_builder_drush_command() {
     'options' => array(
       '--data' => "Location to save downloaded files. May be absolute, or relative to Drupal files dir. Defaults to 'files/hooks'.",
     ),
+    //'bootstrap' => DRUSH_BOOTSTRAP_DRUSH, // No bootstrap at all.    
   );
   
   $items['hooks'] = array(
