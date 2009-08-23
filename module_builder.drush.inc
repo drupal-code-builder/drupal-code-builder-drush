@@ -467,22 +467,6 @@ function module_builder_callback_doc_hooks() {
   }
 }
 
-/**
- * Just for testing stuff on the commandline while developing the module.
- */
-function module_builder_callback_debug() {
-//  include(dirname(__FILE__) . '/../includes/process.inc');
-//variable_get('module_builder_hooks_directory', NULL);
-  //$data = module_builder_get_hook_data();
-  //print_r($data);
-  //print 'fdfd';
-  
-  $dir = _module_builder_get_hooks_directory();
-  print $dir;
-  
-  
-}
-
 
 /**
  * WORK IN PROGRESS
@@ -555,4 +539,20 @@ function module_builder_callback_doc_params() {
     }
     //file_put_contents($filepath . '/' .$filename, $code);  
   }
+}
+
+/**
+ * Just for testing stuff on the commandline while developing the module.
+ */
+function module_builder_callback_debug() {
+//  include(dirname(__FILE__) . '/../includes/process.inc');
+//variable_get('module_builder_hooks_directory', NULL);
+  //$data = module_builder_get_hook_data();
+  //print_r($data);
+  //print 'fdfd';
+  
+  include(dirname(__FILE__) . '/../includes/process.inc');
+  
+  module_builder_process_hook_data();
+  return;  
 }
