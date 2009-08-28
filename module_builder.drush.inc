@@ -51,9 +51,9 @@ function module_builder_drush_command() {
         "'If custom modules define other files to output, you can request those too, omitting the module root name part and any .inc extension, eg 'module_builder' for 'foo.module_builder.inc. " .
         "Default is 'all' if writing new files, 'code' if appending to file or outputting only to terminal.",
       '--write' => 'Write files to sites/all/modules. Will prompt to overwrite existing files; use --yes to force. Use --quiet to suppress output to the terminal.',
-      '--go' => 'Write both module files and enable the new module. Take two commands into the shower? Not me.',
-      '--add' => 'Append hooks to module file. Implies --write --build=code. Warning: will not check hooks already exist.',
-      '--name' => 'Redable name of the module.',
+      '--go' => 'Write all module files and enable the new module. Take two commands into the shower? Not me.',
+      '--add' => "Append hooks to module file. Implies '--write --build=code'. Warning: will not check hooks already exist.",
+      '--name' => 'Readable name of the module.',
       '--desc' => 'Description (for the admin module list).',
       '--help' => 'Module help text (for the system help).',
       '--dep' => 'Dependencies, separated by spaces, eg "forum views".',
@@ -62,7 +62,7 @@ function module_builder_drush_command() {
     'examples' => array(
       'drush mb my_module menu cron nodeapi' => 
         'Generate module code with hook_menu, hook_cron, hook_nodeapi.',
-      'drush mb my_module --info --name="My module" --dep="forum views"' => 
+      'drush mb my_module --build=info --name="My module" --dep="forum views"' => 
         'Generate module info with readable name and dependencies.',
       'drush mb my_module menu cron --write --name="My module" --dep="forum views"' => 
         'Generate both module files, write files and also output to terminal.',
