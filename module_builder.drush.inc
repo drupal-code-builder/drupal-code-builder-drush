@@ -135,9 +135,14 @@ function module_builder_drush_help($section) {
  * where 'hookA' is the short name, ie 'menu' not hook_menu'.
  */
 function module_builder_callback_build() {
+  // Check hook data file exists.
+  if (!_module_builder_check_hook_data()) {
+    return drush_set_error('DRUSH_NOT_COMPLETED', 'No hook definitions found. You need to download hook definitions before using this module.');
+  }
+  
   // Include generating component file.
   include(dirname(__FILE__) . '/../includes/generate.inc');
-  
+    
   $commands = func_get_args();
   
   // What to build
@@ -223,12 +228,12 @@ function module_builder_callback_module($commands, $build_list) {
   // Heap of defaults. Later find some nice way of asking for these. 
   $data['module_readable_name'] = ucfirst($data['module_root_name']);
   $data['module_short_description'] = 'Description';
-    
+  
+  // Generate all our code.
   $module_code = module_builder_generate_module($data, drush_get_option('add'));
   
-  // TODO: test this sooner!
   if (is_null($module_code)) {
-    return drush_set_error('DRUSH_NOT_COMPLETED', 'No hook definitions found. You need to download hook definitions before using this module.');
+    return drush_set_error('DRUSH_NOT_COMPLETED', 'No module code has been generated: perhaps you have specified invalid hook names or hooks this module does not know about.');
   }
 
   //print_r($build_list);  
