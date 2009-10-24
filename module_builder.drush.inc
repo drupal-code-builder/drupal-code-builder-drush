@@ -560,7 +560,7 @@ function module_builder_callback_debug() {
   //drush_include_engine('foo', 'drupal', NULL, module_builder_get_path('includes/foo'));
   //drush_include_engine('wtf', 'foo', NULL, '/Users/joachim/bin/drush/commands/module_builder/includes/foo');
   
-  
+  module_builder_include('foo');
   /*
   include(dirname(__FILE__) . '/../includes/process.inc');
   include(dirname(__FILE__) . '/../includes/update.inc');
