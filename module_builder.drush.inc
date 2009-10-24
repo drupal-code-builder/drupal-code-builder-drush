@@ -305,6 +305,7 @@ function module_builder_callback_info($commands) {
   $data['module_dependencies']      = drush_get_option('dep');
   $data['module_package']           = drush_get_option('package');
 
+  module_builder_include('generate_info');
   $info_code = module_builder_generate_info($data);
 
   module_builder_drush_output_code($data['module_root_name'], $data['module_root_name'] . '.info', $info_code); 
