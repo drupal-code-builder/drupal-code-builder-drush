@@ -142,7 +142,7 @@ function module_builder_callback_build() {
   }
   
   // Include generating component file.
-  include(dirname(__FILE__) . '/../includes/generate.inc');
+  module_builder_include('generate');
     
   $commands = func_get_args();
   
@@ -398,8 +398,8 @@ function module_builder_callback_hook_download() {
  */
 function module_builder_callback_hook_list() {
   // Include generating component file.
-  include(dirname(__FILE__) . '/../includes/process.inc');
-
+  module_builder_include('process');
+  
   $data = module_builder_get_hook_data();
   
   foreach ($data as $file => $hooks) {
