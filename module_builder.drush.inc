@@ -385,7 +385,7 @@ function module_builder_callback_hook_download() {
   module_builder_include('update');
 
   $directory = _module_builder_get_hooks_directory();  
-  $return = module_builder_update_documentation();
+  $return = module_builder_update_data();
   if (!$return) {
     return drush_set_error('Problem downloading hooks.');
   }
