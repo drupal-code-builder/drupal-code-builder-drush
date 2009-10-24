@@ -146,6 +146,9 @@ function module_builder_callback_build() {
     
   $commands = func_get_args();
   
+  // Build the module data.
+  $module_data = module_builder_build_data($commands);
+  
   // What to build
   $build = drush_get_option('build');
   
@@ -184,21 +187,33 @@ function module_builder_callback_build() {
   }
   
   //print_r($build_list);  
-    
+  
+  // Build files.
+  // Build module code in all cases bar 'info'.
+  if ($build != 'info') {
+    module_builder_callback_module($commands, $module_data, $build_list);        
+  }
+  // Build info code in cases 'info' and 'all'.
+  if ($build == 'info' or $build == 'all') {
+    module_builder_callback_info($commands, $module_data);
+  }
+  
+  /*
   switch ($build) {
     case 'info':
       // info and stop
-      module_builder_callback_info($commands);
+      module_builder_callback_info($commands, $module_data);
       break;
     case 'all':
       // info and fall through
-      module_builder_callback_info($commands);
+      module_builder_callback_info($commands, $module_data);
     case 'code':
       // this is just here to look pretty
     default:
       // anything else, eg module, install etc
-      module_builder_callback_module($commands, $build_list);    
+      module_builder_callback_module($commands, $module_data, $build_list);    
   }
+  */
 
   if (drush_get_option('go')) {
     pm_module_manage(array(array_shift($commands)), TRUE);
@@ -206,32 +221,55 @@ function module_builder_callback_build() {
 }
 
 /**
+ * Helper function to build the array of module_data.
+ */
+function module_builder_build_data($commands) {
+  // The first argument is the module machine name.
+  $module_data['module_root_name'] = array_shift($commands);  
+  
+  // Heap of defaults. Later find some nice way of asking for these. 
+  //$data['module_readable_name'] = ucfirst($data['module_root_name']);
+  //$data['module_short_description'] = 'Description';
+  // todo: some function in common.inc to set defaults?
+  
+  $module_data['module_readable_name']     = drush_get_option('name');
+  $module_data['module_short_description'] = drush_get_option('desc');
+  $module_data['module_help_text']         = drush_get_option('help');
+  $module_data['module_dependencies']      = drush_get_option('dep');
+  $module_data['module_package']           = drush_get_option('package');
+  
+  return $module_data;
+}
+
+/**
  * Handles the callback for module code generation.
  *
+ * @param $commands
+ *    The drush array of commands.
+ * @param $module_data
+ *    An array of module data. Passed by reference so file information can
+ *    be added by module_builder_generate_module().
  * @param $build_list
  *    An array of requested code files to output
  *    'code' or 'all' means all of them.
  */  
-function module_builder_callback_module($commands, $build_list) {
+function module_builder_callback_module($commands, &$module_data, $build_list) {
   // The first argument is the module machine name.
-  $data['module_root_name'] = array_shift($commands);  
+  array_shift($commands);  
     
   foreach ($commands as $hook_name) {
-    $data['hooks']["hook_$hook_name"] = TRUE;    
+    $module_data['hooks']["hook_$hook_name"] = TRUE;    
   }
     
-  //drush_print_r($data);
+  //drush_print_r($module_data);
+  //exit;
   /*
   $input = drush_input('input?...');
   drush_print("You entered: >$input<");
   */
- 
-  // Heap of defaults. Later find some nice way of asking for these. 
-  $data['module_readable_name'] = ucfirst($data['module_root_name']);
-  $data['module_short_description'] = 'Description';
-  
+   
   // Generate all our code.
-  $module_code = module_builder_generate_module($data, drush_get_option('add'));
+  $module_code = module_builder_generate_module($module_data, drush_get_option('add'));
   
   if (is_null($module_code)) {
     return drush_set_error('DRUSH_NOT_COMPLETED', 'No module code has been generated: perhaps you have specified invalid hook names or hooks this module does not know about.');
@@ -242,7 +280,7 @@ function module_builder_callback_module($commands, $build_list) {
     // We have keys in module_code that are entire filenames, eg 'foo.install'
     // We have array items in build_list that are sort of file endings, eg 'install'
     // Match them up!
-    $requested_files = module_builder_requested_filenames($data['module_root_name'], array_keys($module_code), $build_list);
+    $requested_files = module_builder_requested_filenames($module_data['module_root_name'], array_keys($module_code), $build_list);
   }
   else {
     // Meh we want the lot.
@@ -295,20 +333,11 @@ function module_builder_requested_filenames($module_root_name, $real, $abbrev) {
 /**
  * Handles the callback for info code generation.
  */  
-function module_builder_callback_info($commands) {
-  // The first argument is the module machine name.
-  $data['module_root_name'] = array_shift($commands);  
-  
-  $data['module_readable_name']     = drush_get_option('name');
-  $data['module_short_description'] = drush_get_option('desc');
-  $data['module_help_text']         = drush_get_option('help');
-  $data['module_dependencies']      = drush_get_option('dep');
-  $data['module_package']           = drush_get_option('package');
-
+function module_builder_callback_info($commands, $module_data) {
   module_builder_include('generate_info');
-  $info_code = module_builder_generate_info($data);
+  $info_code = module_builder_generate_info($module_data);
 
-  module_builder_drush_output_code($data['module_root_name'], $data['module_root_name'] . '.info', $info_code); 
+  module_builder_drush_output_code($module_data['module_root_name'], $module_data['module_root_name'] . '.info', $info_code); 
 }
 
 /**
