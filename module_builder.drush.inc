@@ -4,11 +4,12 @@
 /**
  * @file
  *   Module builder drush commands.
- *
  */
  
 /**
  * Initialization.
+ *
+ * @todo: is there a hook to move this to?
  */ 
 // Include common code.
 include_once(dirname(__FILE__) . '/../includes/common.inc');
@@ -556,9 +557,15 @@ function module_builder_callback_debug() {
   //print_r($data);
   //print 'fdfd';
   
+  //drush_include_engine('foo', 'drupal', NULL, module_builder_get_path('includes/foo'));
+  //drush_include_engine('wtf', 'foo', NULL, '/Users/joachim/bin/drush/commands/module_builder/includes/foo');
+  
+  
+  /*
   include(dirname(__FILE__) . '/../includes/process.inc');
   include(dirname(__FILE__) . '/../includes/update.inc');
   
   module_builder_update_documentation();
+  */
   return;  
 }
