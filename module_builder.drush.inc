@@ -381,7 +381,7 @@ function drush_input($msg, $required = FALSE, $indent = 0) {
  */
 function module_builder_callback_hook_download() {
   // Include component file.
-  include_once(dirname(__FILE__) . '/../includes/update.inc');
+  module_builder_include('update');
 
   $directory = _module_builder_get_hooks_directory();  
   $return = module_builder_update_documentation();
@@ -435,8 +435,8 @@ function module_builder_callback_doc_hooks() {
   }
   
   // Include component files.
-  include_once(dirname(__FILE__) . '/../includes/process.inc');
-  include_once(dirname(__FILE__) . '/../includes/generate.inc');
+  module_builder_include('process');
+  module_builder_include('generate');
   
   $hook_names = module_builder_get_hook_names('short');
 
@@ -502,8 +502,8 @@ function module_builder_callback_doc_params() {
   }
   
   // Include component files.
-  include_once(dirname(__FILE__) . '/../includes/process.inc');
-  include_once(dirname(__FILE__) . '/../includes/generate.inc');
+  module_builder_include('process');
+  module_builder_include('generate');
   
   $hook_names = module_builder_get_hook_names('short');
 
