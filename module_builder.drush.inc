@@ -561,9 +561,11 @@ function module_builder_callback_debug() {
   //drush_include_engine('foo', 'drupal', NULL, module_builder_get_path('includes/foo'));
   //drush_include_engine('wtf', 'foo', NULL, '/Users/joachim/bin/drush/commands/module_builder/includes/foo');
   
-  print _module_builder_get_hooks_directory();
-  module_builder_include('process');
-  print_r(module_builder_get_hook_data());
+  //print _module_builder_get_hooks_directory();
+  module_builder_include('update');
+  //print_r(module_builder_get_hook_data());
+  
+  print_r(module_builder_update_documentation());
   
   /*
   include(dirname(__FILE__) . '/../includes/process.inc');
