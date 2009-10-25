@@ -135,15 +135,7 @@ function module_builder_drush_help($section) {
  * $drush mb machine_name hookA hookB hookC
  * where 'hookA' is the short name, ie 'menu' not hook_menu'.
  */
-function module_builder_callback_build() {
-  // Check hook data file exists.
-  if (!_module_builder_check_hook_data()) {
-    return drush_set_error('DRUSH_NOT_COMPLETED', 'No hook definitions found. You need to download hook definitions before using this module.');
-  }
-  
-  // Include generating component file.
-  module_builder_include('generate');
-    
+function module_builder_callback_build() {  
   $commands = func_get_args();
   
   // Build the module data.
@@ -189,8 +181,15 @@ function module_builder_callback_build() {
   //print_r($build_list);  
   
   // Build files.
+  // Include generating component file.
+  module_builder_include('generate');
   // Build module code in all cases bar 'info'.
   if ($build != 'info') {
+    // Check hook data file exists.
+    if (!_module_builder_check_hook_data()) {
+      return drush_set_error('DRUSH_NOT_COMPLETED', 'No hook definitions found. You need to download hook definitions before using this module.');
+    }
+    
     module_builder_callback_module($commands, $module_data, $build_list);        
   }
   // Build info code in cases 'info' and 'all'.
