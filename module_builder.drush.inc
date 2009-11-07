@@ -289,7 +289,7 @@ function module_builder_callback_module($commands, &$module_data, $build_list) {
 
   foreach ($requested_files as $filename) {
     $code = $module_code[$filename];
-    module_builder_drush_output_code($data['module_root_name'], $filename, $code);   
+    module_builder_drush_output_code($module_data['module_root_name'], $filename, $code);   
     
   }
   return;
@@ -593,7 +593,7 @@ function module_builder_callback_debug() {
   module_builder_include('update');
   //print_r(module_builder_get_hook_data());
   
-  print_r(module_builder_update_documentation());
+  //print_r(module_builder_update_documentation());
   
   /*
   include(dirname(__FILE__) . '/../includes/process.inc');
@@ -601,5 +601,18 @@ function module_builder_callback_debug() {
   
   module_builder_update_documentation();
   */
+  
+  
+  $override = array(
+     'site_name' => 'TEST OVERRIDE',
+  );
+ 
+  global $drush_conf_override;
+  $drush_conf_override = array_merge($drush_conf_override, $override);
+ 
+  print variable_get('site_name');
+  
+  
+  
   return;  
 }
