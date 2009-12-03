@@ -59,6 +59,7 @@ function module_builder_drush_command() {
       '--help' => 'Module help text (for the system help).',
       '--dep' => 'Dependencies, separated by spaces, eg "forum views".',
       '--package' => 'Module package.',
+      '--parent' => 'Name of a module folder to place this new module into; use if this module is to be added to an existing package.',
     ),
     'examples' => array(
       'drush mb my_module menu cron nodeapi' => 
@@ -73,6 +74,8 @@ function module_builder_drush_command() {
         'Generate both module files, write files and output nothing to terminal.',
       'drush mb my_module menu cron --add'=> 
         'Generate code for hook_cron and add it to the existing my_module.module file.',
+      'drush mb my_module menu cron --write --parent=cck'=> 
+        'Generate both module files, write files to a folder my_module inside the cck folder.',
     ),
   );
   
@@ -358,6 +361,9 @@ function module_builder_drush_output_code($module_root_name, $filename, $code) {
   if (drush_get_option(array('write', 'add', 'go'))) {
     
     $module_dir = pm_dl_destination('module');
+    if (drush_get_option('parent')) {
+      $module_dir .= drush_get_option('parent') . '/';
+    }
     $module_dir .= $module_root_name;
     
     if (!is_dir($module_dir)) {
