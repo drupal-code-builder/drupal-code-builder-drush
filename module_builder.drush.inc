@@ -415,9 +415,6 @@ function drush_input($msg, $required = FALSE, $indent = 0) {
  * Callback for downloading hook data.
  */
 function module_builder_callback_hook_download() {
-  // Include component file.
-  module_builder_include('update');
-
   $directory = _module_builder_get_hooks_directory();  
   $return = module_builder_update_data();
   if (!$return) {
@@ -586,20 +583,6 @@ function module_builder_callback_doc_params() {
  * Just for testing stuff on the commandline while developing the module.
  */
 function module_builder_callback_debug() {
-//  include(dirname(__FILE__) . '/../includes/process.inc');
-//variable_get('module_builder_hooks_directory', NULL);
-  //$data = module_builder_get_hook_data();
-  //print_r($data);
-  //print 'fdfd';
-  
-  //drush_include_engine('foo', 'drupal', NULL, module_builder_get_path('includes/foo'));
-  //drush_include_engine('wtf', 'foo', NULL, '/Users/joachim/bin/drush/commands/module_builder/includes/foo');
-  
-  //print _module_builder_get_hooks_directory();
-  module_builder_include('update');
-  //print_r(module_builder_get_hook_data());
-  
-  //print_r(module_builder_update_documentation());
   
   /*
   include(dirname(__FILE__) . '/../includes/process.inc');
@@ -608,17 +591,6 @@ function module_builder_callback_debug() {
   module_builder_update_documentation();
   */
   
-  
-  $override = array(
-     'site_name' => 'TEST OVERRIDE',
-  );
- 
-  global $drush_conf_override;
-  $drush_conf_override = array_merge($drush_conf_override, $override);
- 
-  print variable_get('site_name');
-  
-  
-  
+    
   return;  
 }
