@@ -59,7 +59,7 @@ function module_builder_drush_command() {
       '--help' => 'Module help text (for the system help).',
       '--dep' => 'Dependencies, separated by spaces, eg "forum views".',
       '--package' => 'Module package.',
-      '--parent' => 'Name of a module folder to place this new module into; use if this module is to be added to an existing package.',
+      '--parent' => "Name of a module folder to place this new module into; use if this module is to be added to an existing package. Use '.' for the current working directory.",
     ),
     'examples' => array(
       'drush mb my_module menu cron nodeapi' => 
@@ -76,6 +76,8 @@ function module_builder_drush_command() {
         'Generate code for hook_cron and add it to the existing my_module.module file.',
       'drush mb my_module menu cron --write --parent=cck'=> 
         'Generate both module files, write files to a folder my_module inside the cck folder.',
+      'drush mb my_module menu cron --write --parent=.'=> 
+        'Generate both module files, write files to a folder my_module in the current working directory.',
     ),
   );
   
@@ -362,7 +364,12 @@ function module_builder_drush_output_code($module_root_name, $filename, $code) {
     
     $module_dir = pm_dl_destination('module');
     if (drush_get_option('parent')) {
-      $module_dir .= drush_get_option('parent') . '/';
+      if (drush_get_option('parent') == '.') {
+        $module_dir = drush_get_context('DRUSH_OLDCWD') . '/';
+      }
+      else {
+        $module_dir .= drush_get_option('parent') . '/';
+      }
     }
     $module_dir .= $module_root_name;
     
