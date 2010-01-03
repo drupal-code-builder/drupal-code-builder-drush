@@ -433,13 +433,16 @@ function module_builder_callback_hook_list() {
   module_builder_include('process');
   
   $data = module_builder_get_hook_data();
-  
+  $time = module_builder_get_hook_data_last_updated();
+
   foreach ($data as $file => $hooks) {
     drush_print("Group $file:", 2);
     foreach ($hooks as $key => $hook) {
       drush_print($hook['name'] . ': ' . $hook['description'], 4);
     }
   }
+  
+  drush_print(t("Hook data was processed on @time.", array('@time' => $time)));
 
   //print_r($data);
 }
