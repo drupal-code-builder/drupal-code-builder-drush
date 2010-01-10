@@ -364,11 +364,13 @@ function module_builder_drush_output_code($module_root_name, $filename, $code) {
     
     $module_dir = pm_dl_destination('module');
     if (drush_get_option('parent')) {
-      if (drush_get_option('parent') == '.') {
-        $module_dir = drush_get_context('DRUSH_OLDCWD') . '/';
+      $parent_dir = drush_get_option('parent');
+      if (substr($parent_dir, 0 , 1) == '.') {
+        $parent_dir = substr($parent_dir, 1);
+        $module_dir = drush_get_context('DRUSH_OLDCWD') . '/' . $parent_dir . '/';
       }
       else {
-        $module_dir .= drush_get_option('parent') . '/';
+        $module_dir .= $parent_dir;
       }
     }
     $module_dir .= $module_root_name;
