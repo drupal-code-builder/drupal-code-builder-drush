@@ -35,13 +35,14 @@ function module_builder_drush_command() {
   $items = array();
 
   // the key in the $items array is the name of the command.
-  $items['mb'] = array(
+  $items['mb-build'] = array(
     'callback' => 'module_builder_callback_build',
     'description' => "Generate the code for a new Drupal module, including file headers and hook implementations.",
     'arguments' => array(
       'module name' => 'The machine name of the module.',
       'hooks' => 'Short names of hooks, separated by spaces.',
-    ),    
+    ),
+    'aliases' => array('mb'),
     'options' => array(
       '--data' => "Location to read hook data. May be absolute, or relative to Drupal files dir. Defaults to 'files/hooks'.",
       '--build' => "Which file type to generate: 'all', 'code', 'info', 'FILE'. " .
@@ -81,31 +82,32 @@ function module_builder_drush_command() {
     ),
   );
   
-  $items['mbdl'] = array(
+  $items['mb-download'] = array(
     'callback' => 'module_builder_callback_hook_download',
     'description' => "Update module_builder hook data.",
     'options' => array(
       '--data' => "Location to save downloaded files. May be absolute, or relative to Drupal files dir. Defaults to 'files/hooks'.",
     ),
+    'aliases' => array('mbdl'),
     //'bootstrap' => DRUSH_BOOTSTRAP_DRUSH, // No bootstrap at all.    
   );
   
-  $items['hooks'] = array(
+  $items['mb-list'] = array(
     'callback' => 'module_builder_callback_hook_list',
     'description' => "List the hooks module_builder knows about.",
   );
 
-  $items['dochooks'] = array(
+  $items['mb-dochooks'] = array(
     'callback' => 'module_builder_callback_doc_hooks',
     'description' => "Adds comment headers to hooks that need them in the given module.",
   );
 
-  $items['docparams'] = array(
+  $items['mb-docparams'] = array(
     'callback' => 'module_builder_callback_doc_params',
     'description' => "Adds params... WIP!",
   );
   
-  $items['mbdebug'] = array(
+  $items['mb-debug'] = array(
     'callback' => 'module_builder_callback_debug',
     'description' => "Debug module builder. Does whatever was needed at the time.",
     //'bootstrap' => DRUSH_BOOTSTRAP_DRUSH, // No bootstrap at all.
@@ -128,7 +130,7 @@ function module_builder_drush_command() {
  */
 function module_builder_drush_help($section) {
   switch ($section) {
-    case 'drush:mb':
+    case 'drush:mb-build':
       return dt("Generates module code with the specified hooks.");
   }
 }
