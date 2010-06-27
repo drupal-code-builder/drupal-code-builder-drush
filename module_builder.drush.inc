@@ -192,7 +192,7 @@ function module_builder_callback_build() {
   if ($build != 'info') {
     // Check hook data file exists.
     if (!_module_builder_check_hook_data()) {
-      return drush_set_error('DRUSH_NOT_COMPLETED', 'No hook definitions found. You need to download hook definitions before using this module.');
+      return drush_set_error("DRUSH_NOT_COMPLETED', 'No hook definitions found. You need to download hook definitions before using this module: see the command 'mbdl'.");
     }
     
     module_builder_callback_module($commands, $module_data, $build_list);        
