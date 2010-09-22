@@ -97,6 +97,12 @@ function module_builder_drush_command() {
     'description' => "List the hooks module_builder knows about.",
   );
 
+  $items['mb-analyze'] = array(
+    'callback' => 'module_builder_callback_hook_analyze',
+    'description' => "List the hooks found in a given module.",
+    'aliases' => array('mban'),
+  );
+
   $items['mb-dochooks'] = array(
     'callback' => 'module_builder_callback_doc_hooks',
     'description' => "Adds comment headers to hooks that need them in the given module.",
@@ -459,6 +465,39 @@ function module_builder_callback_hook_list() {
   //print_r($data);
 }
 
+/**
+ * Callback to list hook implementations found in a given module.
+ */
+function module_builder_callback_hook_analyze() {
+  $commands = func_get_args();
+  
+  // The first argument is the module machine name.
+  $module_root_name = array_shift($commands);  
+
+  // Include process component file.
+  module_builder_include('process');
+  $hooks = module_builder_get_hook_names(_module_builder_get_hooks_directory(), TRUE);
+  foreach ($hooks as $key => $hook) {
+    $hooks[$key] = $module_root_name . '_' . $hook;
+  }
+
+  $module_files = module_builder_get_module_files($module_root_name);
+  //drush_print_r($module_files);
+  
+  foreach ($module_files as $file) {
+    $functions = module_builder_get_functions($file);
+    
+    $module_hooks[$file] = array_intersect($functions, $hooks);
+  }
+  
+  if (drush_get_option('flat')) {
+
+  }  
+  
+  drush_print_r($module_hooks);
+  drush_print_r(array_merge($module_hooks));
+}
+
 /** 
  * Callback to add doc headers to existing hooks.
  */
@@ -468,18 +507,7 @@ function module_builder_callback_doc_hooks() {
   // The first argument is the module machine name.
   $module_root_name = array_shift($commands);  
   
-  $filepath = drupal_get_path('module', $module_root_name);
-
-  //$old_dir = getcwd();
-  //chdir($filepath);
-  $files = scandir($filepath);
-
-  foreach ($files as $filename) {
-    $ext = substr(strrchr($filename, '.'), 1);
-    if (in_array($ext, array('module', 'install', 'inc'))) {
-      $module_files[] = $filename;
-    }
-  }
+  $module_files = module_builder_get_module_files($module_root_name);
   
   // Include component files.
   module_builder_include('process');
