@@ -203,11 +203,11 @@ function module_builder_callback_build() {
       return drush_set_error("DRUSH_NOT_COMPLETED', 'No hook definitions found. You need to download hook definitions before using this module: see the command 'mbdl'.");
     }
     
-    module_builder_callback_module($commands, $module_data, $build_list);        
+    module_builder_build_module($commands, $module_data, $build_list);        
   }
   // Build info code in cases 'info' and 'all'.
   if ($build == 'info' or $build == 'all') {
-    module_builder_callback_info($commands, $module_data);
+    module_builder_build_info($commands, $module_data);
   }
   
   /*
@@ -254,7 +254,7 @@ function module_builder_build_data($commands) {
 }
 
 /**
- * Handles the callback for module code generation.
+ * Generates and outputs module code.
  *
  * @param $commands
  *    The drush array of commands.
@@ -265,7 +265,7 @@ function module_builder_build_data($commands) {
  *    An array of requested code files to output
  *    'code' or 'all' means all of them.
  */  
-function module_builder_callback_module($commands, &$module_data, $build_list) {
+function module_builder_build_module($commands, &$module_data, $build_list) {
   // The first argument is the module machine name.
   array_shift($commands);  
     
@@ -343,9 +343,9 @@ function module_builder_requested_filenames($module_root_name, $real, $abbrev) {
 }
 
 /**
- * Handles the callback for info code generation.
+ * Generates and outputs info file code.
  */  
-function module_builder_callback_info($commands, $module_data) {
+function module_builder_build_info($commands, $module_data) {
   module_builder_include('generate_info');
   $info_code = module_builder_generate_info($module_data);
 
