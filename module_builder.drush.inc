@@ -376,16 +376,28 @@ function module_builder_drush_output_code($module_root_name, $filename, $code) {
     if (substr($module_dir, -1, 1) != '/') {
       $module_dir .= '/';
     }
+    
     if (drush_get_option('parent')) {
+      // The --parent option allows the user to specify a location for the new module folder.
       $parent_dir = drush_get_option('parent');
       if (substr($parent_dir, 0 , 1) == '.') {
-        $parent_dir = substr($parent_dir, 1);
-        $module_dir = drush_get_context('DRUSH_OLDCWD') . '/' . $parent_dir . '/';
+        // An initial . means to start from the current directory rather than 
+        // the modules folder, which allows submodules to be created where the
+        // user is standing.
+        $module_dir = drush_get_context('DRUSH_OLDCWD') . '/';
+        // Remove both the . and the following /.
+        $parent_dir = substr($parent_dir, 2);
+        if ($parent_dir) {
+          // If there's anything left (since just '.' is a valid option), append it.
+          $module_dir .= $parent_dir . '/';
+        }
       }
       else {
-        $module_dir .= $parent_dir;
+        $module_dir .= $parent_dir . '/';
       }
     }
+    // $module_dir should now be a full path to the parent of the destination
+    // folder, with a trailing slash.
     $module_dir .= $module_root_name;
     
     if (!is_dir($module_dir)) {
