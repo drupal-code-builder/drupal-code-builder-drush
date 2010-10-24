@@ -371,6 +371,11 @@ function module_builder_drush_output_code($module_root_name, $filename, $code) {
   if (drush_get_option(array('write', 'add', 'go'))) {
     
     $module_dir = pm_dl_destination('module');
+    
+    // Gee great. Drush HEAD doesn't give us the trailing /.
+    if (substr($module_dir, -1, 1) != '/') {
+      $module_dir .= '/';
+    }
     if (drush_get_option('parent')) {
       $parent_dir = drush_get_option('parent');
       if (substr($parent_dir, 0 , 1) == '.') {
