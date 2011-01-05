@@ -3,7 +3,9 @@
 
 /**
  * @file
- *   Module builder drush commands.
+ *  Module builder drush commands.
+ *
+ * IMPORTANT: This file should be identical across versions of Drupal.
  */
  
 /**
