@@ -24,32 +24,16 @@ function module_builder_drush_init() {
  * Helper for hook_drush_init() and completion callbacks.
  */
 function module_builder_drush_init_helper() {
-  // Load the file containing our factory class.
-  include_once(dirname(__FILE__) . '/../Factory.php');
-
   // Set up the MB factory.
-  \ModuleBuilder\Factory::setEnvironmentClass('Drush');
+  \DrupalCodeBuilder\Factory::setEnvironmentClass('Drush', drush_drupal_version());
 }
 
 /**
  * Implementation of hook_drush_command().
- *
- * In this hook, you specify which commands your
- * drush module makes available, what it does and
- * description.
- *
- * Notice how this structure closely resembles how
- * you define menu hooks.
- *
- * @See drush_parse_command() for a list of recognized keys.
- *
- * @return
- *   An associative array describing your command(s).
  */
 function module_builder_drush_command() {
   $items = array();
 
-  // the key in the $items array is the name of the command.
   $items['mb-build'] = array(
     'callback' => 'drush_module_builder_callback_build_module',
     'description' => "Generate the code for a new Drupal module, including file headers and hook implementations.",
@@ -66,6 +50,9 @@ function module_builder_drush_command() {
         "Use the 'perms:' marker to separate this from prior commands, eg 'mymodule hook_a hook_b perms: 'administer my module''. Quote strings that contain spaces.",
       'services:' => "IDs of services, separated by spaces. " . "\n",
       'settings_form!' => "Add this argument to add a settings form to the module.",
+      'api!' => "Add this argument to add an api.php file to the module.",
+      'readme!' => "Add this argument to add a README file to the module.",
+      'tests!' => "Add this argument to add a Simpletest test case file to the module.",
     ),
     // Commented out, as only the first argument is required.
     // TODO: figure out how to specify this!
@@ -77,7 +64,6 @@ function module_builder_drush_command() {
       'build' => "Which module components to generate:
   - 'info' makes the info file.
   - 'readme' makes README file.
-  - 'api' makes an api.php file to document hooks. It will parse existing module files for calls to module_invoke_all() and use those as starter file content.
   - 'tests' makes the tests folder and test case file.
   - 'module', 'install' make the foo.module or foo.install file respectively.
   - 'FILE': If custom modules define other files to output, you can request those too, omitting the module root name part and any .inc extension, eg 'views' for 'foo.views.inc.
@@ -114,20 +100,6 @@ Default is 'all' if writing new files, 'code' if appending to file or outputting
     ),
   );
 
-  $items['mb-theme'] = array(
-    'callback' => 'drush_module_builder_callback_build_theme',
-    'aliases' => array('mbt'),
-    'description' => "TODO.",
-    'arguments' => array(
-      'theme name' => "The machine name of the theme. Use '.' to specify the current folder name.",
-      'themeables' => "Short names of templates or theme functions, separated by spaces.",
-    ),
-    'options' => array(
-      'write' => 'Write files to sites/all/modules. Will prompt to overwrite existing files; use yes to force. Use quiet to suppress output to the terminal.',
-      'parent' => "Name of a theme folder to place this new theme into; use if this theme is to be added to an existing package. Use '.' for the current working directory.",
-    ),
-  );
-
   $items['mb-component'] = array(
     'callback' => 'drush_module_builder_callback_build_component',
     'aliases' => array('mbc'),
@@ -147,7 +119,6 @@ Default is 'all' if writing new files, 'code' if appending to file or outputting
       'data' => "Location to save downloaded files. May be absolute, or relative to Drupal files dir. Defaults to 'files/hooks'.",
     ),
     'aliases' => array('mbdl'),
-    //'bootstrap' => DRUSH_BOOTSTRAP_DRUSH, // No bootstrap at all.
   );
 
   $items['mb-list'] = array(
@@ -161,63 +132,11 @@ Default is 'all' if writing new files, 'code' if appending to file or outputting
     ),
   );
 
-  $items['mb-analyze'] = array(
-    'callback' => 'drush_module_builder_callback_hook_analyze',
-    'description' => "List the hooks found in a given module.",
-    'aliases' => array('mban'),
-    'options' => array(
-      'flat' => "Shows a flat list of hooks rather than grouped by file.",
-    ),
-  );
-
-  $items['mb-dochooks'] = array(
-    'callback' => 'drush_module_builder_callback_doc_hooks',
-    'description' => "Adds comment headers to hooks that need them in the given module.",
-  );
-
-  $items['mb-docparams'] = array(
-    'callback' => 'drush_module_builder_callback_doc_params',
-    'description' => "Adds params... WIP!",
-  );
-
-  $items['mb-debug'] = array(
-    'callback' => 'drush_module_builder_callback_debug',
-    'description' => "Debug module builder. Does whatever was needed at the time.",
-    //'bootstrap' => DRUSH_BOOTSTRAP_DRUSH, // No bootstrap at all.
-  );
-
-  $items['mb-dir'] = array(
-    'callback' => 'drush_module_builder_callback_get_data_dir',
-    'description' => "Print the location of the module builder data directory.",
-  );
-
-  // Retain backwards compatility with Drush 4 and whatever other version
-  // numbers come before 5.
-  if (version_compare(DRUSH_VERSION, '5.0-dev', '<')) {
-    foreach ($items as $command => $item) {
-      if (isset($item['options'])) {
-        $items[$command]['options'] = array();
-        foreach ($item['options'] as $option => $text) {
-          $items[$command]['options']["--$option"] = $text;
-        }
-      }
-    }
-  }
-
   return $items;
 }
 
 /**
  * Implementation of hook_drush_help().
- *
- * This function is called whenever a drush user calls
- * 'drush help <name-of-your-command>'
- *
- * @param
- *   A string with the help section (prepend with 'drush:')
- *
- * @return
- *   A string with the help text for your command.
  */
 function module_builder_drush_help($section) {
   switch ($section) {
@@ -229,11 +148,36 @@ function module_builder_drush_help($section) {
 }
 
 /**
+ * Handle a sanity exception from the library and output a message.
+ *
+ * @param ModuleBuilder\Exception\SanityException $e
+ *  A sanity exception object.
+ */
+function module_builder_handle_sanity_exception($e) {
+  $failed_sanity_level = $e->getFailedSanityLevel();
+  switch ($failed_sanity_level) {
+    case 'data_directory_exists':
+      $message = "The component data directory could not be created or is not writable.";
+      break;
+    case 'component_data_processed':
+      $message = "No component data was found. Run 'drush mb-download' to process component data from documentation files.";
+      break;
+  }
+  drush_set_error(DRUSH_APPLICATION_ERROR, $message);
+}
+
+/**
  * Module builder drush command callback.
  *
  * Form:
- * $drush mb machine_name hookA hookB hookC
- * where 'hookA' is the short name, ie 'menu' not hook_menu'.
+ *  $drush mb machine_name hookA hookB hookC
+ *    perms: permission_name
+ *    routes: path/to/thing another/path
+ *    readme! settings-form! tests!
+ * Hook names may be short or long, e.g. both 'help' and 'hook_help' are
+ * allowed. Parameters ending in a ':' are markers, which introduce a new type
+ * of parameter, such as routes and plugins. Parameters ending in '!' are
+ * booleans which add a single component such as a README file.
  */
 function drush_module_builder_callback_build_module() {
   $commands = func_get_args();
@@ -244,11 +188,11 @@ function drush_module_builder_callback_build_module() {
   // Get our task handler. This performs a sanity check on the environment which
   // throws an exception.
   try {
-    $mb_task_handler_generate = \ModuleBuilder\Factory::getTask('Generate', 'module');
+    $mb_task_handler_generate = \DrupalCodeBuilder\Factory::getTask('Generate', 'module');
   }
-  catch (\ModuleBuilder\Exception $e) {
+  catch (\DrupalCodeBuilder\Exception\SanityException $e) {
     // If the problem is that the hooks need downloading, we can recover from this.
-    if ($e->needs_hooks_download) {
+    if ($e->getFailedSanityLevel() == 'component_data_processed') {
       if (drush_confirm(dt('No hook definitions found. Would you like to download them now?'))) {
         // Download the hooks so we can move on.
         $success = drush_module_builder_callback_hook_download();
@@ -258,7 +202,7 @@ function drush_module_builder_callback_build_module() {
         }
 
         // Get the task handler that we were trying to get in the first place.
-        $mb_task_handler_generate = \ModuleBuilder\Factory::getTask('Generate', 'module');
+        $mb_task_handler_generate = \DrupalCodeBuilder\Factory::getTask('Generate', 'module');
       }
     }
     // Otherwise, fail.
@@ -343,8 +287,6 @@ function drush_module_builder_callback_build_module() {
     }
   }
 
-  //print_r($build);
-
   // Make a list out of the build option string. This may of course have only
   // one item in it.
   $build_list = explode(' ', $build);
@@ -357,8 +299,6 @@ function drush_module_builder_callback_build_module() {
   // Set the build list in the module data.
   // TODO: move all the above to a helper function!
   $component_data_extra['requested_build'] = array_fill_keys($build_list, TRUE);
-
-  //print_r($build_list);
 
   // The 'bare code' option. This doesn't fully work yet, as 'add' doesn't
   // fully work yet! TODO!
@@ -383,10 +323,6 @@ function drush_module_builder_callback_build_module() {
 /**
  * Command argument complete callback: mb-build.
  *
- * Of form COMMANDFILE_COMMAND_complete().
- *
- * (Lousy Drush docs: COMMAND is module_builder_callback_build, apparently!)
- *
  * Debug this with, for example:
  *  $ drush --early=includes/complete.inc --complete-debug drush mb foo ini
  * and comment out cache in drush_complete_get().
@@ -401,11 +337,11 @@ function module_builder_module_builder_callback_build_complete() {
     // Drupal bootstrap isn't ready enough to check environment, because the
     // file API isn't loaded. This isn't bad, because here it's us, the caller,
     // that knows we can't pass the check.
-    \ModuleBuilder\Factory::getEnvironment()->skipSanityCheck(TRUE);
+    \DrupalCodeBuilder\Factory::getEnvironment()->skipSanityCheck(TRUE);
 
-    $mb_task_handler_report = \ModuleBuilder\Factory::getTask('ReportHookData');
+    $mb_task_handler_report = \DrupalCodeBuilder\Factory::getTask('ReportHookData');
   }
-  catch (\ModuleBuilder\Exception $e) {
+  catch (\DrupalCodeBuilder\Exception\SanityException $e) {
     // Just do nothing if we're not ready: the actual command will deal with
     // error output to the user.
     return;
@@ -424,51 +360,9 @@ function module_builder_module_builder_callback_build_complete() {
     //if (preg_match('/^hook_/'))
   }
 
-  //drush_print_r($complete);
   return array(
     'values' => $complete,
   );
-}
-
-/**
- * Command callback for building a theme.
- */
-function drush_module_builder_callback_build_theme() {
-  $commands = func_get_args();
-
-  //drush_print_r($commands);
-
-  $theme_data = array();
-
-  // Create our environment handler, set it, then get the task.
-  try {
-    $mb_task_handler_generate = \ModuleBuilder\Factory::getTask('Generate', 'theme');
-  }
-  catch (\ModuleBuilder\Exception $e) {
-    // Doubtful we get here.
-    return;
-  }
-
-  // Get the folder for the theme, and from that its machine name.
-  $theme_data['theme_folder'] = module_builder_get_component_folder('theme', $commands[0]);
-  $theme_data['theme_name'] = basename($theme_data['theme_folder']);
-
-  array_shift($commands);
-  $theme_data['themeables'] = $commands;
-
-  // Build files.
-  // Include generating component file.
-  $files = $mb_task_handler_generate->generateComponent($theme_data);
-
-  drush_print_r($theme_data);
-  return;
-
-
-  $theme_path = path_to_theme();
-
-  foreach ($files as $filename => $code) {
-    module_builder_drush_output_code($theme_path, $filename, $code);
-  }
 }
 
 /**
@@ -491,8 +385,6 @@ function drush_module_builder_callback_build_component($component_type = NULL) {
     $interactive = TRUE;
   }
 
-  //drush_print_r($commands);
-
   if (empty($component_type)) {
     if ($interactive) {
       $component_type = drush_prompt("Enter a component name", 'module', TRUE);
@@ -506,7 +398,12 @@ function drush_module_builder_callback_build_component($component_type = NULL) {
 }
 
 /**
- * Workhorse for various Drush command callbacks.
+ * Builds a Drupal component.
+ *
+ * This is a common helper for Drush command callbacks, that each deal with a
+ * single type of component, e.g. modules or themes.
+ *
+ * This hands over to module_builder_drush_output_code() to output the code.
  *
  * @param $commands
  *  The commands array; the original parameters from the Drush command callback.
@@ -524,6 +421,11 @@ function drush_module_builder_callback_build_component($component_type = NULL) {
  *      'hooks: menu init presets: node field-widget'
  *    - 'drush_option': A string giving the drush option to take this property's
  *      value from.
+ *    - 'drush_no_option_list': Suppress the output of an option list for this
+ *      property. Useful for a property whose list of options is very large.
+ *    - 'drush_value_process': A callable to apply processing to the property's
+ *      value before passing it to the generator. This receives the value as its
+ *      parameter.
  * @param $component_data = array()
  *  Initial component data, into which data obtained from the user will be
  *  added. Command callbacks may wish to gather extra data, or add defaults.
@@ -532,17 +434,26 @@ function drush_module_builder_build_component($commands, $component_type, $compo
   // Get the Generator task, specifying the component we want so we get a
   // sanity check based on that and our environment.
   try {
-    $mb_task_handler_generate = \ModuleBuilder\Factory::getTask('Generate', $component_type);
+    $mb_task_handler_generate = \DrupalCodeBuilder\Factory::getTask('Generate', $component_type);
   }
-  catch (\ModuleBuilder\Exception $e) {
-    drush_set_error(DRUSH_APPLICATION_ERROR, $e->getMessage());
+  catch (\DrupalCodeBuilder\Exception\SanityException $e) {
+    module_builder_handle_sanity_exception($e);
     return;
   }
 
+  // Set the base type.
+  $component_data['base'] = $component_type;
+
   // Get the component data info, and add in extra info specific to Drush.
   $component_data_info = $mb_task_handler_generate->getRootComponentDataInfo();
+  // Remove extra property info that's for properties we don't know about (such
+  // as ones that only apply to certain versions of Drupal).
+  foreach ($component_info_drush_extra as $property_name => $property_extra_info) {
+    if (!isset($component_data_info[$property_name])) {
+      unset($component_info_drush_extra[$property_name]);
+    }
+  }
   $component_data_info = array_merge_recursive($component_data_info, $component_info_drush_extra);
-  //drush_print_r($component_data_info);
 
   // Split the commands array into:
   //  - plain commands
@@ -582,7 +493,6 @@ function drush_module_builder_build_component($commands, $component_type, $compo
       $plain_commands[] = $command;
     }
   }
-  //drush_print_r($prefixed_commands);
 
   // Determine whether we're in interactive mode.
   $interactive = !drush_get_option(array('non-interactive', 'noi'));
@@ -603,23 +513,24 @@ function drush_module_builder_build_component($commands, $component_type, $compo
     // Initialize our value from the default that's been set by
     // prepareComponentDataProperty(). We try various things to set it.
     $value = $component_data[$property_name];
+    // Keep track of whether the value has come from the user or is still the
+    // default.
+    $user_specified = FALSE;
 
     // If the property is required, and there are plain command parameters
     // remaining, take one of those.
-    if ($property_info['required'] && $plain_commands) {
+    if (!$user_specified && $property_info['required'] && $plain_commands) {
       $value = array_shift($plain_commands);
-      //drush_print_r("taking $property_name from commands as $value");
     }
 
     // If the property has a prefix, and the commands included that prefix,
     // then take the commands for that prefix.
-    if (empty($value) && isset($property_info['command_prefix']) && !empty($prefixed_commands[$property_info['command_prefix']])) {
+    if (!$user_specified && isset($property_info['command_prefix']) && !empty($prefixed_commands[$property_info['command_prefix']])) {
       $value = $prefixed_commands[$property_info['command_prefix']];
-      //drush_print_r("taking $property_name from prefixed commands");
     }
 
     // If the property can be set with a command-line option, check that.
-    if (empty($value) && isset($property_info['drush_option'])) {
+    if (!$user_specified && isset($property_info['drush_option'])) {
       $drush_option_value = drush_get_option($property_info['drush_option']);
       if (!empty($drush_option_value)) {
         $value = $drush_option_value;
@@ -637,7 +548,7 @@ function drush_module_builder_build_component($commands, $component_type, $compo
     // command other than use the default value. That's already set in the
     // component data.
 
-    if (empty($value) && $interactive) {
+    if (!$user_specified && $interactive) {
       // Show the user the available options, unless told not to.
       $numeric_options = FALSE;
       if (isset($property_info['options']) && empty($property_info['drush_no_option_list'])) {
@@ -652,30 +563,29 @@ function drush_module_builder_build_component($commands, $component_type, $compo
         }
       }
 
+      // Turn empty defaults into a value that Drush won't output.
+      $default = empty($component_data[$property_name]) ? NULL : $component_data[$property_name];
+
       // Make a prompt string, letting the user know if the input is optional
       // so they don't waste time typing.
-      $prompt = "Enter the {$property_info['label']}";
       switch ($property_info['format']) {
         case 'array':
-          $prompt .= ' ' . "(space separated list)";
+          $prompt = "Enter the {$property_info['label']}, as a space separated list";
           break;
         case 'boolean':
+          $prompt = "Do you want a {$property_info['label']}";
           $prompt .= ' ' . "(y/n)";
+          // Set the default.
+          $default = empty($default) ? 'n' : 'y';
           break;
+        default:
+          $prompt = "Enter the {$property_info['label']}";
       }
       if (empty($property_info['required']) && empty($component_data[$property_name])) {
         $prompt .= ' ' . "(optional)";
       }
 
-      // Turn empty defaults into a value that Drush won't output.
-      $default = empty($component_data[$property_name]) ? NULL : $component_data[$property_name];
-
       $value = drush_prompt($prompt, $default, $property_info['required']);
-
-      // Split up the value if it should be an array.
-      if ($property_info['format'] == 'array') {
-        $value = preg_split('/\s+/', $value, -1,  PREG_SPLIT_NO_EMPTY);
-      }
 
       // Callback to convert a value given as an index in a list of options into
       // the actual option value.
@@ -700,6 +610,11 @@ function drush_module_builder_build_component($commands, $component_type, $compo
       }
     }
 
+    // Split up the value if it should be an array.
+    if ($property_info['format'] == 'array' && !is_array($value)) {
+      $value = preg_split('/\s+/', $value, -1,  PREG_SPLIT_NO_EMPTY);
+    }
+
     // Perform any processing specific to drush.
     if (isset($property_info['drush_value_process'])) {
       $callback = $property_info['drush_value_process'];
@@ -713,11 +628,9 @@ function drush_module_builder_build_component($commands, $component_type, $compo
   // Perform any final processing on the component data.
   // This prepares data, for example expands options such as hook presets.
   $mb_task_handler_generate->processComponentData($component_data_info, $component_data);
-  //drush_print_r($component_data);
 
   // Generate the component.
   $files = $mb_task_handler_generate->generateComponent($component_data);
-  //drush_print_r($files);
 
   $component_dir = module_builder_get_component_folder($component_type, $component_data['root_name']);
 
@@ -757,7 +670,7 @@ function module_builder_drush_component_root_name_process($component_root_name) 
 }
 
 /**
- * Get the folder where a component should be saved.
+ * Get the folder where a generated component's files should be written to.
  *
  * @param $component_type
  *  The type of the component. One of 'module' or 'theme'.
@@ -803,19 +716,12 @@ function module_builder_get_component_folder($component_type, $component_name) {
 
   // Fourth and final try: build it based on the module folder structure.
 
-  // Drush changes function names for version 5.
-  // I wish its branch names and version numbers made some sort of sense.
-  if (version_compare(DRUSH_VERSION, '5.0-dev', '>=')) {
-    // There is probably a proper way to do this but it's Sunday morning and
-    // I want this to just work and so brute force appeals.
-    require_once DRUSH_BASE_PATH . '/commands/pm/download.pm.inc';
-    $module_dir = _pm_download_destination($component_type);
-  }
-  else {
-    $module_dir = pm_dl_destination($component_type);
-  }
+  // There is probably a proper way to do this but it's Sunday morning and
+  // I want this to just work and so brute force appeals.
+  require_once DRUSH_BASE_PATH . '/commands/pm/download.pm.inc';
+  $module_dir = _pm_download_destination($component_type);
 
-  // Gee great. Drush HEAD doesn't give us the trailing /.
+  // Some versions of Drush don't give us the trailing /.
   if (substr($module_dir, -1, 1) != '/') {
     $module_dir .= '/';
   }
@@ -878,8 +784,8 @@ function module_builder_drush_output_code($component_dir, $filename, $code) {
       }
     }
 
-    // Add to file option
-    // if file doesn't exist, we skip this and silently write it anyway
+    // Add to file option.
+    // If the file doesn't exist, we skip this and silently write it anyway.
     if (drush_get_option('add') && file_exists($filepath)) {
       $fh = fopen($filepath, 'a');
       fwrite($fh, $code);
@@ -887,7 +793,7 @@ function module_builder_drush_output_code($component_dir, $filename, $code) {
       return;
     }
 
-    // if file exists, ask for whether to overwrite
+    // If the file exists, ask for whether to overwrite.
     if (file_exists($filepath)) {
       if (!drush_confirm(dt('File ' . $filename . ' exists. Do you really want to overwrite?'))) {
         return;
@@ -908,39 +814,37 @@ function drush_module_builder_callback_hook_download() {
   // Get our task handler. This performs a sanity check which throws an
   // exception.
   try {
-    $mb_task_handler_collect = \ModuleBuilder\Factory::getTask('Collect');
+    $mb_task_handler_collect = \DrupalCodeBuilder\Factory::getTask('Collect');
+
+    // Hidden option for developers: downloads a subset of hooks to create the
+    // data for Drupal Code Builder's unit tests.
+    if (drush_get_option('test')) {
+      $mb_task_handler_collect = \DrupalCodeBuilder\Factory::getTask('Testing\CollectTesting');
+    }
   }
-  catch (\ModuleBuilder\Exception $e) {
-    return drush_set_error(DRUSH_APPLICATION_ERROR, $e->getMessage());
+  catch (\DrupalCodeBuilder\Exception\SanityException $e) {
+    module_builder_handle_sanity_exception($e);
   }
 
   $mb_task_handler_collect->collectComponentData();
 
-  // TODO: there is no return value from the hook collection (nor has there
-  // been for a long time!)
-  // Fake this for now!
-  $return = TRUE;
-
-  if (!$return) {
-    return drush_set_error(DRUSH_APPLICATION_ERROR, 'Problem downloading hooks.');
-  }
-  else {
-    $hooks_directory = \ModuleBuilder\Factory::getEnvironment()->getHooksDirectory();
-    drush_print("Hook files have been downloaded to {$hooks_directory} and processed.");
-    return TRUE;
-  }
+  $hooks_directory = \DrupalCodeBuilder\Factory::getEnvironment()->getHooksDirectory();
+  drush_print("Hook files have been downloaded to {$hooks_directory} and processed.");
+  return TRUE;
 }
 
 /**
  * Callback to list known hooks.
  */
 function drush_module_builder_callback_hook_list() {
+  $commands = func_get_args();
+
   // Get our task handler, which checks hook data is ready.
   try {
-    $mb_task_handler_report = \ModuleBuilder\Factory::getTask('ReportHookData');
+    $mb_task_handler_report = \DrupalCodeBuilder\Factory::getTask('ReportHookData');
   }
-  catch (\ModuleBuilder\Exception $e) {
-    drush_set_error(DRUSH_APPLICATION_ERROR, $e->getMessage());
+  catch (\DrupalCodeBuilder\Exception\SanityException $e) {
+    module_builder_handle_sanity_exception($e);
     return;
   }
 
@@ -975,10 +879,10 @@ function drush_module_builder_callback_hook_list() {
 
   // List presets.
   try {
-    $mb_task_handler_report_presets = \ModuleBuilder\Factory::getTask('ReportHookPresets');
+    $mb_task_handler_report_presets = \DrupalCodeBuilder\Factory::getTask('ReportHookPresets');
   }
-  catch (\ModuleBuilder\Exception $e) {
-    drush_set_error(DRUSH_APPLICATION_ERROR, $e->getMessage());
+  catch (\DrupalCodeBuilder\Exception\SanityException $e) {
+    module_builder_handle_sanity_exception($e);
     return;
   }
 
@@ -990,242 +894,9 @@ function drush_module_builder_callback_hook_list() {
     }
   }
 
-  $hooks_directory = \ModuleBuilder\Factory::getEnvironment()->getHooksDirectory();
+  $hooks_directory = \DrupalCodeBuilder\Factory::getEnvironment()->getHooksDirectory();
   drush_print(t("Hook data retrieved from @dir.", array('@dir' => $hooks_directory)));
-  drush_print(t("Hook data was processed on @time.", array('@time' => $time)));
-
-  //print_r($data);
-}
-
-/**
- * Callback to list hook implementations found in a given module.
- */
-function drush_module_builder_callback_hook_analyze() {
-  // Get our task handler, which checks hook data is ready.
-  try {
-    $mb_task_handler_report = \ModuleBuilder\Factory::getTask('ReportHookData');
-    $mb_task_handler_analyze = \ModuleBuilder\Factory::getTask('AnalyzeModule');
-  }
-  catch (\ModuleBuilder\Exception $e) {
-    drush_set_error(DRUSH_APPLICATION_ERROR, $e->getMessage());
-    return;
-  }
-
-  $commands = func_get_args();
-
-  // The first argument is the module machine name.
-  $module_root_name = array_shift($commands);
-
-  // TODO: use module_builder_get_hook_implementations().
-  $hooks = $mb_task_handler_report->listHookNames('short');
-
-  foreach ($hooks as $key => $hook) {
-    $hooks[$key] = $module_root_name . '_' . $hook;
-  }
-
-  $module_files = $mb_task_handler_analyze->getFiles($module_root_name);
-  $module_hooks = $module_hooks_flat = array();
-
-  foreach ($module_files as $file) {
-    $functions = $mb_task_handler_analyze->getFileFunctions($file);
-
-    $file_hooks = array_intersect($functions, $hooks);
-
-    $filename = basename($file);
-    $module_hooks[$filename] = $file_hooks;
-    foreach ($file_hooks as $hook) {
-      $module_hooks_flat[$hook] = $filename;
-    }
-  }
-
-  if (drush_get_option('flat')) {
-    foreach ($module_hooks_flat as $hook => $filename) {
-      drush_print("$hook implemented in $filename");
-    }
-  }
-  else {
-    foreach ($module_hooks as $filename => $hooks) {
-      if (!count($hooks)) {
-        continue;
-      }
-      drush_print("hooks found in $filename:");
-      foreach ($hooks as $hook) {
-        drush_print("  $hook");
-      }
-    }
-
-  }
-
-  //drush_print_r($module_hooks);
-  //drush_print_r(array_merge($module_hooks));
-}
-
-/**
- * Callback to add doc headers to existing hooks.
- */
-function drush_module_builder_callback_doc_hooks() {
-  // TODO: Currently broken: need to find a way to get into the generating system!
-  return;
-
-  // Get our task handlers, which checks hook data is ready.
-  try {
-    $mb_task_handler_report = \ModuleBuilder\Factory::getTask('ReportHookData');
-    $mb_task_handler_analyze = \ModuleBuilder\Factory::getTask('AnalyzeModule');
-  }
-  catch (\ModuleBuilder\Exception $e) {
-    drush_set_error(DRUSH_APPLICATION_ERROR, $e->getMessage());
-    return;
-  }
-
-  $commands = func_get_args();
-
-  // The first argument is the module machine name.
-  $module_root_name = array_shift($commands);
-
-  $module_files = $mb_task_handler_analyze->getFiles($module_root_name);
-
-  $hook_names = $mb_task_handler_report->listHookNames('short');
-
-  $pattern = '[(?<! \* / \n )' . # no PHP doc: single quoted so \n works
-    "function \ image_gallery _ ( \w * )  # function declaration: capture hook name
-     ]mx";
-
-  $filepath = realpath(drush_get_context('DRUSH_DRUPAL_ROOT'));
-  foreach ($module_files as $filename) {
-    $code = file_get_contents($filepath . '/' . $filename);
-    //print $code;
-
-    // Get functions that have no docs.
-    preg_match_all($pattern, $code, $function_names);
-
-    // Get only those that are actual hooks.
-    $bad_hooks = array_intersect($function_names[1], $hook_names);
-
-    // For each hook that has no documentation.
-    foreach ($bad_hooks as $hook_name) {
-      $doc = module_builder_generate_hook_doxy("hook_$hook_name");
-      $pattern2 = "[(?= function \ image_gallery _ $hook_name )]x";
-      $code = preg_replace($pattern2, $doc, $code);
-    }
-
-    if (!drush_get_option('quiet')) {
-      print $code;
-    }
-
-    print 'Added hook documentation headers for: ' . implode(', ', $bad_hooks) . "\n";
-    if (!drush_confirm(dt('Are you sure you want to overwrite ' . $filename . '?'))) {
-      continue;
-    }
-    file_put_contents($filepath . '/' .$filename, $code);
-  }
-}
-
-/**
- * Callback to output the location of the data directory.
- */
-function drush_module_builder_callback_get_data_dir() {
-  try {
-    $mb_task_handler_report_hooks = \ModuleBuilder\Factory::getTask('ReportHookData');
-  }
-  catch (\ModuleBuilder\Exception $e) {
-    drush_set_error(DRUSH_APPLICATION_ERROR, $e->getMessage());
-    return;
-  }
-
-  // We don't actually need a task, we just need to get the property from the
-  // environment. However, getting the ReportHookData task runs the sanity check
-  // directory so we can report if it's not writable.
-  $hooks_directory = \ModuleBuilder\Factory::getEnvironment()->getHooksDirectory();
-
-  drush_print('Module builder data is in ' . $hooks_directory);
-}
-
-/**
- * WORK IN PROGRESS
- * Add function headers wherever needed with params.
- */
-function drush_module_builder_callback_doc_params() {
-  // TODO: Currently broken: need to find a way to get into the generating system!
-  return;
-
-  $commands = func_get_args();
-
-  // Get our task handler, which checks hook data is ready.
-  try {
-    $mb_task_handler_report = \ModuleBuilder\Factory::getTask('ReportHookData');
-  }
-  catch (\ModuleBuilder\Exception $e) {
-    drush_set_error(DRUSH_APPLICATION_ERROR, $e->getMessage());
-    return;
-  }
-
-  $hook_names = $mb_task_handler_report->listHookNames('short');
-
-  // The first argument is the module machine name.
-  $module_root_name = array_shift($commands);
-
-  $filepath = drupal_get_path('module', $module_root_name);
-
-  //$old_dir = getcwd();
-  //chdir($filepath);
-  $files = scandir($filepath);
-
-  foreach ($files as $filename) {
-    $ext = substr(strrchr($filename, '.'), 1);
-    if (in_array($ext, array('module', 'install', 'inc'))) {
-      $module_files[] = $filename;
-    }
-  }
-
-  $pattern = '[
-      / \* \* \n    # start phpdoc
-      \ \* \ ( .* ) \n  # first line of phpdoc: capture the text
-  (?: \ \* .* \n )* # lines of phpdoc
-      \ \* /  \n    # end phpdoc
-      function \ ( \w* ) \( ( .* ) \) \  { # function declaration: capture both entire declaration and name
-  ]mx';
-
-  foreach ($module_files as $filename) {
-    $code = file_get_contents($filepath . '/' . $filename);
-    //print $code;
-
-    // Get functions that have no docs.
-    preg_match_all($pattern, $code, $function_names);
-
-
-
-
-    // Get only those that are actual hooks.
-    //$bad_hooks = array_intersect($function_names[1], $hook_names);
-
-    // For each hook that has no documentation.
-    foreach ($bad_hooks as $hook_name) {
-      $doc = module_builder_generate_hook_doxy("hook_$hook_name");
-      $pattern2 = "[(?= function \ image_gallery _ $hook_name )]x";
-      $code = preg_replace($pattern2, $doc, $code);
-    }
-
-    if (!drush_get_option('quiet')) {
-     // print $code;
-    }
-
-    print 'Added hook documentation headers for: ' . implode(', ', $bad_hooks) . "\n";
-    if (!drush_confirm(dt('Are you sure you want to overwrite ' . $filename . '?'))) {
-      continue;
-    }
-    //file_put_contents($filepath . '/' .$filename, $code);
-  }
-}
-
-/**
- * Just for testing stuff on the commandline while developing the module.
- */
-function drush_module_builder_callback_debug() {
-  $data = module_builder_get_hook_data_flat();
-  drush_print_r($data);
-
-
-
-
-  return;
+  drush_print(t("Hook data was processed on @time.", array(
+    '@time' => date(DATE_RFC822, $time),
+  )));
 }
