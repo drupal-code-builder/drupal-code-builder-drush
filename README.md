@@ -23,3 +23,11 @@ The following commands are available:
   and plugin types.
 - `mb-build`: Generates code for a Drupal module. See the command help for more
   detail.
+
+## A note on history
+
+Commits in this repository older than 2017-08-22 are extracted from other
+repositories that originally were the home of this command file: the drupal.org
+module_builder project, and a drush fork.
+They were extracted using git filter-branch, and reconstituted into a single
+history with git graft and git filter-branch.
