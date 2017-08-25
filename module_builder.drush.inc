@@ -921,7 +921,14 @@ function module_builder_get_component_folder($component_type, $component_name) {
   $drupal_root = drush_get_context('DRUSH_DRUPAL_ROOT');
 
   // First try: if the component exists, we write there: nice and simple.
-  $component_path = drupal_get_path($component_type, $component_name);
+  // In Drupal 8, drupal_get_filename() triggers an error for a component that
+  // doesn't exist, so bypass that with a dummy error handler.
+  set_error_handler(function() {}, E_USER_WARNING);
+
+  $component_path = @drupal_get_path($component_type, $component_name);
+
+  restore_error_handler();
+
   if (!empty($component_path)) {
     return $drupal_root . '/' . $component_path;
   }
