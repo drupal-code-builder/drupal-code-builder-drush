@@ -450,7 +450,7 @@ function drush_module_builder_callback_build_component($component_type = NULL) {
  * @param $component_type
  *  The component type, e.g., 'module'.
  * @param $component_info_drush_extra = array()
- *  An array to merge into the component data info array. This may may contains
+ *  An array to merge into the component data info array. This may contain
  *  additional information specific to drush. Possible keys for each property
  *  info array are:
  *    - 'command_prefix': A string that when suffixed with ':' acts as a marker
