@@ -1,4 +1,4 @@
-This is a set of Drush commands (for Drush 8.x) for generating code with the
+This is a set of Drush commands (for Drush 9.x) for generating code with the
 Drupal Code Builder library.
 
 ## Installation
