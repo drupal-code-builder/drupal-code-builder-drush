@@ -1,0 +1,14 @@
+{
+  "name": "drupal-code-builder/drupal-code-builder-drush",
+  "description": "Provides Drush commands for generating Drupal code using Drupal Code Builder.",
+  "type": "drupal-drush",
+  "license": "GPL-2.0+",
+  "require": {
+    "drupal-code-builder/drupal-code-builder": "^3.0.0"
+  },
+  "require-dev": {
+    "symfony/var-dumper": "^3.2"
+  },
+  "autoload": {
+  }
+}
