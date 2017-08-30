@@ -1,15 +1,17 @@
 This is a set of Drush commands (for Drush 9.x) for generating code with the
-Drupal Code Builder library.
+Drupal Code Builder library
+(https://github.com/drupal-code-builder/drupal-code-builder).
 
 ## Installation
 
 1. Place this folder somewhere where Drush will locate it as a command. (See
-  http://docs.drush.org/en/8.x/commands/#create-commandfiledrushinc for
+  http://docs.drush.org/en/master/commands/#create-commandfiledrushinc for
   possible locations.)
-2. Do `composer require drupal-code-builder/drupal-code-builder` in the Drush
+2. Rename the folder to 'CodeBuilder'. (TODO: remove the need for this step!)
+3. Do `composer require drupal-code-builder/drupal-code-builder` in the Drush
   installation folder.
-3. Do `drush cc drush` to rebuild Drush's cache of commands.
-4. Do `drush mb-download` in your Drupal site. This detects hooks, services, and
+4. Do `drush cc drush` to rebuild Drush's cache of commands.
+5. Do `drush mb-download` in your Drupal site. This detects hooks, services, and
   plugin types in your Drupal site's codebase and analyses them for use with
   Drupal Code Builder.
 
@@ -17,12 +19,11 @@ Drupal Code Builder library.
 
 The following commands are available:
 
-- `drush mb-list`: Lists all the hooks, services, and plugins that Drupal Code
+- `drush cb-list`: Lists all the hooks, services, and plugins that Drupal Code
   Builder has detected in your Drupal site's codebase.
-- `drush mb-download`: Updates the stored definitions of Drupal hooks, services
+- `drush cb-update`: Updates the stored definitions of Drupal hooks, services
   and plugin types.
-- `mb-build`: Generates code for a Drupal module. See the command help for more
-  detail.
+- TODO: document remaining commands.
 
 ## A note on history
 
