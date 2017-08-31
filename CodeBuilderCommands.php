@@ -70,18 +70,7 @@ class CodeBuilderCommands extends DrushCommands {
   public function commandUpdateDefinitions() {
     // Get our task handler. This performs a sanity check which throws an
     // exception.
-    try {
-      $task_handler_collect = \DrupalCodeBuilder\Factory::getTask('Collect');
-
-      // Hidden option for developers: downloads a subset of hooks to create the
-      // data for Drupal Code Builder's unit tests.
-      if (drush_get_option('test')) {
-        $task_handler_collect = \DrupalCodeBuilder\Factory::getTask('Testing\CollectTesting');
-      }
-    }
-    catch (\DrupalCodeBuilder\Exception\SanityException $e) {
-      $this->handleSanityException($e);
-    }
+    $task_handler_collect = $this->getCodeBuilderTask('Collect');
 
     $task_handler_collect->collectComponentData();
 
@@ -104,12 +93,7 @@ class CodeBuilderCommands extends DrushCommands {
    */
   public function commandListDefinitions() {
     // Get our task handler, which checks hook data is ready.
-    try {
-      $mb_task_handler_report = \DrupalCodeBuilder\Factory::getTask('ReportHookData');
-    }
-    catch (\DrupalCodeBuilder\Exception\SanityException $e) {
-      $this->handleSanityException($e);
-    }
+    $mb_task_handler_report = $this->getCodeBuilderTask('ReportHookData');
 
     $time = $mb_task_handler_report->lastUpdatedDate();
     $data = $mb_task_handler_report->listHookData();
@@ -148,12 +132,7 @@ class CodeBuilderCommands extends DrushCommands {
     }
 
     // List presets.
-    try {
-      $mb_task_handler_report_presets = \DrupalCodeBuilder\Factory::getTask('ReportHookPresets');
-    }
-    catch (\DrupalCodeBuilder\Exception\SanityException $e) {
-      $this->handleSanityException($e);
-    }
+    $mb_task_handler_report_presets = $this->getCodeBuilderTask('ReportHookPresets');
 
     $hook_presets = $mb_task_handler_report_presets->getHookPresets();
     foreach ($hook_presets as $hook_preset_name => $hook_preset_data) {
@@ -165,12 +144,7 @@ class CodeBuilderCommands extends DrushCommands {
 
     // TODO: don't need to check version, this is on 8 now.
     if (drush_drupal_major_version() == 8) {
-      try {
-        $mb_task_handler_report_plugins = \DrupalCodeBuilder\Factory::getTask('ReportPluginData');
-      }
-      catch (\DrupalCodeBuilder\Exception\SanityException $e) {
-        $this->handleSanityException($e);
-      }
+      $mb_task_handler_report_plugins = $this->getCodeBuilderTask('ReportPluginData');
 
       $data = $mb_task_handler_report_plugins->listPluginData();
 
@@ -179,12 +153,7 @@ class CodeBuilderCommands extends DrushCommands {
         drush_print($plugin_type_id, 2);
       }
 
-      try {
-        $mb_task_handler_report_services = \DrupalCodeBuilder\Factory::getTask('ReportServiceData');
-      }
-      catch (\DrupalCodeBuilder\Exception\SanityException $e) {
-        $this->handleSanityException($e);
-      }
+      $mb_task_handler_report_services = $this->getCodeBuilderTask('ReportServiceData');
 
       $data = $mb_task_handler_report_services->listServiceData();
 
