@@ -202,6 +202,29 @@ class CodeBuilderCommands extends DrushCommands {
   }
 
   /**
+   * Gets a Drupal Code Builder Task handler.
+   *
+   * @param $task_type
+   *  The type of task to pass to \DrupalCodeBuilder\Factory::getTask().
+   *
+   * @return
+   *  The task handler.
+   *
+   * @throws \Exception
+   *  Throws an exception if there is a problem that would prevent the task's
+   *  operation.
+   */
+  protected function getCodeBuilderTask($task_type) {
+    try {
+      $task = \DrupalCodeBuilder\Factory::getTask($task_type);
+    }
+    catch (\DrupalCodeBuilder\Exception\SanityException $e) {
+      $this->handleSanityException($e);
+    }
+    return $task;
+  }
+
+  /**
    * Re-throws a DCB exception with a message.
    *
    * @param \DrupalCodeBuilder\Exception\SanityException $e
