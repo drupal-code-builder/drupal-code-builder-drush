@@ -207,8 +207,26 @@ class CodeBuilderCommands extends DrushCommands {
     )));
   }
 
-  protected function handleSanityException() {
-    // TODO!
+  /**
+   * Re-throws a DCB exception with a message.
+   *
+   * @param \DrupalCodeBuilder\Exception\SanityException $e
+   *  The original exception thrown by the library.
+   *
+   * @throws \Exception
+   *  Throws an exception with a message based on the given DCB exception.
+   */
+  protected function handleSanityException(\DrupalCodeBuilder\Exception\SanityException $e) {
+    $failed_sanity_level = $e->getFailedSanityLevel();
+    switch ($failed_sanity_level) {
+      case 'data_directory_exists':
+        $message = "The component data directory could not be created or is not writable.";
+        break;
+      case 'component_data_processed':
+        $message = "No component data was found. Run 'drush cb-download' to process component data from your site's code files.";
+        break;
+    }
+    throw new \Exception($message);
   }
 
 }
