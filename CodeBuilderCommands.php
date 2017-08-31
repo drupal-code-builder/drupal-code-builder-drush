@@ -57,11 +57,11 @@ class CodeBuilderCommands extends DrushCommands {
    * Updates Drupal component definitions.
    *
    * @command cb-update
-   * @usage cb-update
+   * @usage drush cb-update
    *   Update data on Drupal components, storing in the default location.
-   * @usage cb-update --location=relative/path
+   * @usage drush cb-update --location=relative/path
    *   Update data on hooks, storing data in public://relative/path.
-   * @usage cb-update --location=/absolute/path
+   * @usage drush cb-update --location=/absolute/path
    *   Update data on hooks, storing data in /absolute/path.
    * @bootstrap DRUSH_BOOTSTRAP_DRUPAL_FULL
    * @aliases cbu
@@ -98,7 +98,7 @@ class CodeBuilderCommands extends DrushCommands {
    * Lists stored Drupal component definitions.
    *
    * @command cb-list
-   * @usage cb-list
+   * @usage drush cb-list
    *   List stored analysis data on Drupal components.
    * @bootstrap DRUSH_BOOTSTRAP_DRUPAL_FULL
    * @aliases cbl
