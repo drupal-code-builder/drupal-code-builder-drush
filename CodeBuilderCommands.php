@@ -81,8 +81,6 @@ class CodeBuilderCommands extends DrushCommands {
     }
     catch (\DrupalCodeBuilder\Exception\SanityException $e) {
       $this->handleSanityException($e);
-      // TODO!
-      throw $e;
     }
 
     $task_handler_collect->collectComponentData();
@@ -110,8 +108,7 @@ class CodeBuilderCommands extends DrushCommands {
       $mb_task_handler_report = \DrupalCodeBuilder\Factory::getTask('ReportHookData');
     }
     catch (\DrupalCodeBuilder\Exception\SanityException $e) {
-      module_builder_handle_sanity_exception($e);
-      return;
+      $this->handleSanityException($e);
     }
 
     $time = $mb_task_handler_report->lastUpdatedDate();
@@ -155,8 +152,7 @@ class CodeBuilderCommands extends DrushCommands {
       $mb_task_handler_report_presets = \DrupalCodeBuilder\Factory::getTask('ReportHookPresets');
     }
     catch (\DrupalCodeBuilder\Exception\SanityException $e) {
-      module_builder_handle_sanity_exception($e);
-      return;
+      $this->handleSanityException($e);
     }
 
     $hook_presets = $mb_task_handler_report_presets->getHookPresets();
@@ -173,8 +169,7 @@ class CodeBuilderCommands extends DrushCommands {
         $mb_task_handler_report_plugins = \DrupalCodeBuilder\Factory::getTask('ReportPluginData');
       }
       catch (\DrupalCodeBuilder\Exception\SanityException $e) {
-        module_builder_handle_sanity_exception($e);
-        return;
+        $this->handleSanityException($e);
       }
 
       $data = $mb_task_handler_report_plugins->listPluginData();
@@ -188,8 +183,7 @@ class CodeBuilderCommands extends DrushCommands {
         $mb_task_handler_report_services = \DrupalCodeBuilder\Factory::getTask('ReportServiceData');
       }
       catch (\DrupalCodeBuilder\Exception\SanityException $e) {
-        module_builder_handle_sanity_exception($e);
-        return;
+        $this->handleSanityException($e);
       }
 
       $data = $mb_task_handler_report_services->listServiceData();
