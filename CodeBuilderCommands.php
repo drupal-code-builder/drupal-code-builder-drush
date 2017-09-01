@@ -40,10 +40,13 @@ class CodeBuilderCommands extends DrushCommands {
   /**
    * Set the default value for the location option, and set it to Drush context.
    *
-   * @hook pre-command @code_builder
+   * This is done in an init hook so interact hooks have the location set and
+   * thus have access to component data.
+   *
+   * @hook init @code_builder
    */
-  public function preCommandLocationOption(CommandData $commandData) {
-    $location = $commandData->input()->getOption('location');
+  public function initLocationOption(InputInterface $input, AnnotationData $annotationData) {
+    $location = $input->getOption('location');
 
     // Have to set this back into the options context, as otherwise
     // drush_get_option() which the Environment calls won't have it.
