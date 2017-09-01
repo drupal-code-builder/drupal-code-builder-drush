@@ -10,5 +10,8 @@
     "symfony/var-dumper": "^3.2"
   },
   "autoload": {
+    "psr-4": {
+      "Drush\\Commands\\CodeBuilder\\": ""
+    }
   }
 }
