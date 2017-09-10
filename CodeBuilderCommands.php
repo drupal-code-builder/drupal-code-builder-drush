@@ -88,80 +88,95 @@ class CodeBuilderCommands extends DrushCommands {
    * Lists stored Drupal component definitions.
    *
    * @command cb-list
+   * @option type Which type of data to list. One of:
+   *   'all': show everything.
+   *   'hooks': show hooks.
+   *   'plugins': show plugin types.
+   *   'services': show services.
    * @usage drush cb-list
    *   List stored analysis data on Drupal components.
+   * @usage drush cb-list --type=plugins
+   *   List stored analysis data on Drupal plugin types.
    * @bootstrap DRUSH_BOOTSTRAP_DRUPAL_FULL
    * @aliases cbl
    * @code_builder
    */
-  public function commandListDefinitions() {
+  public function commandListDefinitions($options = ['type' => 'all']) {
     // Get our task handler, which checks hook data is ready.
     $mb_task_handler_report = $this->getCodeBuilderTask('ReportHookData');
 
-    $data = $mb_task_handler_report->listHookData();
+    $type = $options['type'];
 
-    // TODO -- redo this as a --format option, same as 'drush list'.
-    /*
-    if (drush_get_option('raw')) {
-      drush_print_r($data);
-      return;
-    }
-    */
+    if ($type == 'hooks' || $type == 'all') {
+      $data = $mb_task_handler_report->listHookData();
 
-    // TODO - redo this as a --filter option, same as 'drush list'.
-    /*
-    if (count($commands)) {
-      // Put the requested filenames into the keys of an array, and intersect them
-      // with the hook data.
-      $files_requested = array_fill_keys($commands, TRUE);
-      $data_requested = array_intersect_key($data, $files_requested);
-    }
-    else {
-      $data_requested = $data;
-    }
-
-    if (!count($data_requested) && count($files_requested)) {
-      drush_print(t("No hooks found for the specified files."));
-    }
-    */
-
-    drush_print("Hooks:");
-    foreach ($data as $file => $hooks) {
-      drush_print("Group $file:", 2);
-      foreach ($hooks as $key => $hook) {
-        drush_print($hook['name'] . ': ' . $hook['description'], 4);
+      // TODO -- redo this as a --format option, same as 'drush list'.
+      /*
+      if (drush_get_option('raw')) {
+        drush_print_r($data);
+        return;
       }
-    }
+      */
 
-    // List presets.
-    $mb_task_handler_report_presets = $this->getCodeBuilderTask('ReportHookPresets');
+      // TODO - redo this as a --filter option, same as 'drush list'.
+      /*
+      if (count($commands)) {
+        // Put the requested filenames into the keys of an array, and intersect them
+        // with the hook data.
+        $files_requested = array_fill_keys($commands, TRUE);
+        $data_requested = array_intersect_key($data, $files_requested);
+      }
+      else {
+        $data_requested = $data;
+      }
 
-    $hook_presets = $mb_task_handler_report_presets->getHookPresets();
-    foreach ($hook_presets as $hook_preset_name => $hook_preset_data) {
-      drush_print("Preset $hook_preset_name: " . $hook_preset_data['label'], 2);
-      foreach ($hook_preset_data['hooks'] as $hook) {
-        drush_print($hook, 4);
+      if (!count($data_requested) && count($files_requested)) {
+        drush_print(t("No hooks found for the specified files."));
+      }
+      */
+
+      drush_print("Hooks:");
+      foreach ($data as $file => $hooks) {
+        drush_print("Group $file:", 2);
+        foreach ($hooks as $key => $hook) {
+          drush_print($hook['name'] . ': ' . $hook['description'], 4);
+        }
+      }
+
+      // List presets.
+      $mb_task_handler_report_presets = $this->getCodeBuilderTask('ReportHookPresets');
+
+      $hook_presets = $mb_task_handler_report_presets->getHookPresets();
+      foreach ($hook_presets as $hook_preset_name => $hook_preset_data) {
+        drush_print("Preset $hook_preset_name: " . $hook_preset_data['label'], 2);
+        foreach ($hook_preset_data['hooks'] as $hook) {
+          drush_print($hook, 4);
+        }
       }
     }
 
     // TODO: don't need to check version, this is on 8 now.
     if (drush_drupal_major_version() == 8) {
-      $mb_task_handler_report_plugins = $this->getCodeBuilderTask('ReportPluginData');
+      if ($type == 'plugins' || $type == 'all') {
+        $mb_task_handler_report_plugins = $this->getCodeBuilderTask('ReportPluginData');
 
-      $data = $mb_task_handler_report_plugins->listPluginData();
+        $data = $mb_task_handler_report_plugins->listPluginData();
 
-      drush_print("Plugins types:");
-      foreach ($data as $plugin_type_id => $plugin_type_data) {
-        drush_print($plugin_type_id, 2);
+        drush_print("Plugins types:");
+        foreach ($data as $plugin_type_id => $plugin_type_data) {
+          drush_print($plugin_type_id, 2);
+        }
       }
 
-      $mb_task_handler_report_services = $this->getCodeBuilderTask('ReportServiceData');
+      if ($type == 'services' || $type == 'all') {
+        $mb_task_handler_report_services = $this->getCodeBuilderTask('ReportServiceData');
 
-      $data = $mb_task_handler_report_services->listServiceData();
+        $data = $mb_task_handler_report_services->listServiceData();
 
-      drush_print("Services:");
-      foreach ($data as $service_id => $service_info) {
-        drush_print($service_id, 2);
+        drush_print("Services:");
+        foreach ($data as $service_id => $service_info) {
+          drush_print($service_id, 2);
+        }
       }
     }
 
