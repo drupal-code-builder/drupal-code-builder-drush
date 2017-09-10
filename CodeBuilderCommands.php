@@ -98,7 +98,6 @@ class CodeBuilderCommands extends DrushCommands {
     // Get our task handler, which checks hook data is ready.
     $mb_task_handler_report = $this->getCodeBuilderTask('ReportHookData');
 
-    $time = $mb_task_handler_report->lastUpdatedDate();
     $data = $mb_task_handler_report->listHookData();
 
     // TODO -- redo this as a --format option, same as 'drush list'.
@@ -166,6 +165,7 @@ class CodeBuilderCommands extends DrushCommands {
       }
     }
 
+    $time = $mb_task_handler_report->lastUpdatedDate();
     $hooks_directory = \DrupalCodeBuilder\Factory::getEnvironment()->getHooksDirectory();
     drush_print(t("Component data retrieved from @dir.", array('@dir' => $hooks_directory)));
     drush_print(t("Component data was processed on @time.", array(
