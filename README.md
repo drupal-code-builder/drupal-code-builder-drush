@@ -1,6 +1,7 @@
-This is a set of Drush commands (for Drush 9.x) for generating code with the
-Drupal Code Builder library
-(https://github.com/drupal-code-builder/drupal-code-builder).
+This is a set of Drush commands for generating code with the Drupal Code Builder
+library (https://github.com/drupal-code-builder/drupal-code-builder).
+
+The 9.x branch works with Drush 9. For Drush 8, use the 8.x branch.
 
 ## Installation
 
