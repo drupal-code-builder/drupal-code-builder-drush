@@ -1,0 +1,5 @@
+services:
+  code_builder_drush.commands:
+    class: \Drupal\code_builder_drush\CodeBuilderCommands
+    tags:
+      - { name: drush.command }
