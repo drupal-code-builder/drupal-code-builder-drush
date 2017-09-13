@@ -27,26 +27,26 @@ class CodeBuilderCommands extends DrushCommands {
   }
 
   /**
-   * Add the 'location' option to our commands.
+   * Add the 'data-location' option to our commands.
    *
    * @hook option @code_builder
-   * @option location Directory in which to store data. Use a relative path to
-   *    store within public://, an absolute path otherwise. Defaults to
+   * @option data-location Directory in which to store data. Use a relative path
+   *    to store within public://, an absolute path otherwise. Defaults to
    *    public://code-builder. This should typically be set in drushrc.php to
    *    permamently store data in a custom location.
    */
-  public function optionLocation($options = ['location' => 'code-builder']) {}
+  public function optionDataLocation($options = ['data-location' => 'code-builder']) {}
 
   /**
-   * Set the default value for the location option, and set it to Drush context.
+   * Sets a default for the data-location option, and set in Drush context.
    *
    * This is done in an init hook so interact hooks have the location set and
    * thus have access to component data.
    *
    * @hook init @code_builder
    */
-  public function initLocationOption(InputInterface $input, AnnotationData $annotationData) {
-    $location = $input->getOption('location');
+  public function initDataLocationOption(InputInterface $input, AnnotationData $annotationData) {
+    $location = $input->getOption('data-location');
 
     // Have to set this back into the options context, as otherwise
     // drush_get_option() which the Environment calls won't have it.
@@ -62,9 +62,9 @@ class CodeBuilderCommands extends DrushCommands {
    * @command cb-update
    * @usage drush cb-update
    *   Update data on Drupal components, storing in the default location.
-   * @usage drush cb-update --location=relative/path
+   * @usage drush cb-update --data-location=relative/path
    *   Update data on hooks, storing data in public://relative/path.
-   * @usage drush cb-update --location=/absolute/path
+   * @usage drush cb-update --data-location=/absolute/path
    *   Update data on hooks, storing data in /absolute/path.
    * @bootstrap DRUSH_BOOTSTRAP_DRUPAL_FULL
    * @aliases cbu
