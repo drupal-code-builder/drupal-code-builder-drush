@@ -62,7 +62,7 @@ The following commands are available:
   Builder has detected in your Drupal site's codebase.
 - `drush cb-update`: Updates the stored definitions of Drupal hooks, services
   and plugin types.
-- TODO: document remaining commands.
+- `drush cb-module`: Creates a module, or adds components to one.
 
 ## A note on history
 
