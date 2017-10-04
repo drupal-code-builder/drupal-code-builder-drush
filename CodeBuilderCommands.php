@@ -264,7 +264,7 @@ class CodeBuilderCommands extends DrushCommands {
     // Collect data for the properties.
     // TODO: boolean components will get asked for, even thought there's no
     // point since they've been selected.
-    $build_values = $this->interactCollectProperties($task_handler_generate, $component_data_info, $build_values);
+    $build_values = $this->interactCollectProperties($task_handler_generate, $output, $component_data_info, $build_values);
 
     // Set the values on the context, so the comand callback can get them.
     // TODO: This is a hack because it's not possible to define dynamic
@@ -315,7 +315,11 @@ class CodeBuilderCommands extends DrushCommands {
    * @return
    *  The values array with the user-entered values added to it.
    */
-  protected function interactCollectProperties($task_handler_generate, &$data_info, $values) {
+  protected function interactCollectProperties($task_handler_generate, $output, &$data_info, $values) {
+    static $nesting = 0;
+
+    $nesting++;
+
     foreach ($data_info as $property_name => &$property_info) {
       if (!empty($property_info['skip'])) {
         // TODO! prepare it so it gets defaults!
@@ -325,6 +329,24 @@ class CodeBuilderCommands extends DrushCommands {
       if ($property_info['format'] == 'compound') {
         // Compound property: collect multiple items, recursing into this
         // method for each item.
+        // Treat top-level compound properties as required, since the user
+        // selected them in the initial component menu, so should not be asked
+        // again.
+        if ($data_info[$property_name]['required'] || $nesting == 1) {
+          $output->writeln("Enter details for {$data_info[$property_name]['label']} (at least one required):");
+        }
+        else {
+          $question = new \Symfony\Component\Console\Question\ConfirmationQuestion(
+            dt("Enter details for {$data_info[$property_name]['label']}?"),
+            FALSE
+          );
+          $enter_compound = $this->io()->askQuestion($question);
+
+          if (!$enter_compound) {
+            continue;
+          }
+        }
+
         $value = [];
         $delta = 0;
         do {
@@ -332,7 +354,7 @@ class CodeBuilderCommands extends DrushCommands {
           // into it.
           $value[$delta] = [];
 
-          $value[$delta] = $this->interactCollectProperties($task_handler_generate, $data_info[$property_name]['properties'], $value[$delta]);
+          $value[$delta] = $this->interactCollectProperties($task_handler_generate, $output, $data_info[$property_name]['properties'], $value[$delta]);
 
           $question = new \Symfony\Component\Console\Question\ConfirmationQuestion(
             dt("Enter more {$data_info[$property_name]['label']}?"),
