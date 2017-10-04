@@ -335,7 +335,7 @@ class CodeBuilderCommands extends DrushCommands {
           $value[$delta] = $this->interactCollectProperties($task_handler_generate, $data_info[$property_name]['properties'], $value[$delta]);
 
           $question = new \Symfony\Component\Console\Question\ConfirmationQuestion(
-            dt("Enter another item?"),
+            dt("Enter more {$data_info[$property_name]['label']}?"),
             FALSE
           );
           $enter_another = $this->io()->askQuestion($question);
