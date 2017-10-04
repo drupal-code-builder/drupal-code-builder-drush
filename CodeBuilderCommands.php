@@ -453,6 +453,8 @@ class CodeBuilderCommands extends DrushCommands {
         dt("Do you want a {$property_info['label']}"),
         $default
       );
+      // Note that booleans are always required: you have to answer either TRUE
+      // or FALSE.
 
       $value = $this->io()->askQuestion($question);
     }
@@ -462,9 +464,12 @@ class CodeBuilderCommands extends DrushCommands {
         dt("Enter the {$property_info['label']}"),
         $default
       );
-      // Hack to work around the question not allowing an empty answer.
-      // See https://github.com/drush-ops/drush/issues/2931
-      $question->setValidator(function ($answer) { return $answer; });
+
+      if (!$property_info['required']) {
+        // Hack to work around the question not allowing an empty answer.
+        // See https://github.com/drush-ops/drush/issues/2931
+        $question->setValidator(function ($answer) { return $answer; });
+      }
 
       $value = $this->io()->askQuestion($question);
     }
