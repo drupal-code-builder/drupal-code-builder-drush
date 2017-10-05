@@ -306,20 +306,20 @@ class CodeBuilderCommands extends DrushCommands {
    *
    * @param $task_handler_generate
    *  The generate task handler.
+   * @param $output
+   *  The Symfony output handler.
    * @param &$data_info
    *  A data info array about properties to collect. This should not have been
    *  passed to prepareComponentDataProperty() already.
    * @param $values
    *  A values array.
+   * @param $nesting
+   *  (optional) A counter indicating the recursion level for this method.
    *
    * @return
    *  The values array with the user-entered values added to it.
    */
-  protected function interactCollectProperties($task_handler_generate, $output, &$data_info, $values) {
-    static $nesting = 0;
-
-    $nesting++;
-
+  protected function interactCollectProperties($task_handler_generate, $output, &$data_info, $values, $nesting = 0) {
     foreach ($data_info as $property_name => &$property_info) {
       if (!empty($property_info['skip'])) {
         // TODO! prepare it so it gets defaults!
@@ -332,7 +332,7 @@ class CodeBuilderCommands extends DrushCommands {
         // Treat top-level compound properties as required, since the user
         // selected them in the initial component menu, so should not be asked
         // again.
-        if ($data_info[$property_name]['required'] || $nesting == 1) {
+        if ($data_info[$property_name]['required'] || $nesting == 0) {
           $output->writeln("Enter details for {$data_info[$property_name]['label']} (at least one required):");
         }
         else {
@@ -354,7 +354,7 @@ class CodeBuilderCommands extends DrushCommands {
           // into it.
           $value[$delta] = [];
 
-          $value[$delta] = $this->interactCollectProperties($task_handler_generate, $output, $data_info[$property_name]['properties'], $value[$delta]);
+          $value[$delta] = $this->interactCollectProperties($task_handler_generate, $output, $data_info[$property_name]['properties'], $value[$delta], $nesting + 1);
 
           $question = new \Symfony\Component\Console\Question\ConfirmationQuestion(
             dt("Enter more {$data_info[$property_name]['label']}?"),
