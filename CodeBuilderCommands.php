@@ -422,7 +422,7 @@ class CodeBuilderCommands extends DrushCommands {
       }
 
       $question = new \Symfony\Component\Console\Question\ChoiceQuestion(
-        dt("Enter the {$property_info['label']}"),
+        $this->getQuestionPromptForProperty("Enter the @label", $property_info),
         $options,
         $default
       );
@@ -452,7 +452,7 @@ class CodeBuilderCommands extends DrushCommands {
       // documentation in Symfony code.
       do {
         $question = new \Symfony\Component\Console\Question\Question(
-          dt("Enter the {$property_info['label']}, one per line, empty line to finish"),
+          $this->getQuestionPromptForProperty("Enter the @label, one per line, empty line to finish", $property_info),
           $default
         );
         // Hack to work around the question not allowing an empty answer.
@@ -472,7 +472,7 @@ class CodeBuilderCommands extends DrushCommands {
     elseif ($property_info['format'] == 'boolean') {
       // Boolean property.
       $question = new \Symfony\Component\Console\Question\ConfirmationQuestion(
-        dt("Do you want a {$property_info['label']}"),
+        $this->getQuestionPromptForProperty("Do you want a @label", $property_info),
         $default
       );
       // Note that booleans are always required: you have to answer either TRUE
@@ -483,7 +483,7 @@ class CodeBuilderCommands extends DrushCommands {
     elseif ($property_info['format'] == 'string') {
       // String property.
       $question = new \Symfony\Component\Console\Question\Question(
-        dt("Enter the {$property_info['label']}"),
+        $this->getQuestionPromptForProperty("Enter the @label", $property_info),
         $default
       );
 
@@ -501,6 +501,32 @@ class CodeBuilderCommands extends DrushCommands {
     }
 
     return $value;
+  }
+
+  /**
+   * Gets the prompt string for a question.
+   *
+   * Helper for askQuestionForProperty().
+   *
+   * TODO Refactor this into a custom QuestionHelper class.
+   *
+   * @param string $text
+   *   The text for the question, which should contain a '@label' placeholder.
+   * @param $property_info
+   *   The property's info array.
+   *
+   * @return string
+   *   The text with the label inserted for the placeholder, and the
+   *   description, if any, appended.
+   */
+  protected function getQuestionPromptForProperty($text, $property_info) {
+    $prompt = str_replace('@label', $property_info['label'], $text);
+    if (isset($property_info['description'])) {
+      $prompt .= "\n";
+      // Needs a single character indent, apparently.
+      $prompt .= ' <comment>(' . $property_info['description']  . ')</comment>';
+    }
+    return $prompt;
   }
 
   /**
@@ -935,5 +961,91 @@ class CodeBuilderCommands extends DrushCommands {
     }
     throw new \Exception($message);
   }
+
+  /**
+   * My debugging.
+   *
+   * @command cbt
+   */
+  public function commandDebug(InputInterface $input, OutputInterface $output) {
+    $question = new \Symfony\Component\Console\Question\Question(
+      dt("Enter the {$property_info['label']}\nmoretext here"),
+      $default
+    );
+
+    if (!$property_info['required']) {
+      // Hack to work around the question not allowing an empty answer.
+      // See https://github.com/drush-ops/drush/issues/2931
+      $question->setValidator(function ($answer) { return $answer; });
+    }
+
+    $value = $this->io()->askQuestion($question);
+
+
+
+
+    $folder = $this->getComponentFolder('module', 'foo', './testparnet/');
+    dump($folder);
+    return;
+
+    $question_helper = new \Symfony\Component\Console\Helper\QuestionHelper();
+    $question = new \Symfony\Component\Console\Question\Question(
+      "Enter a value"
+    );
+    //$question->setValidator(function ($answer) { return $answer; });
+    $value = $question_helper->ask($input, $output, $question);
+    dump($value);
+
+    // Nope doesn't work? $helper = $this->getHelper('question');
+
+    $question = new \Symfony\Component\Console\Question\ChoiceQuestion(
+      "Enter a value",
+      array(
+        '',
+        'red',
+        'blue',
+        'yellow'
+      ),
+      ''
+    );
+    $question->setValidator(function ($answer) { return $answer; });
+    $value = $this->io()->askQuestion($question);
+
+
+    $question = new \Symfony\Component\Console\Question\Question(
+      "Enter a value"
+    );
+    $question->setValidator(function ($answer) { return $answer; });
+    $value = $this->io()->askQuestion($question);
+
+    dump($value);
+    return;
+
+    dump($this->io());
+    $value = $this->io()->ask("XEnter a value", NULL);
+    $value = $this->io()->ask("XEnter a value", '');
+
+    /*
+    $listing = new \Drupal\Core\Extension\ExtensionDiscovery(\Drupal::root());
+    $files = $listing->scan('module');
+    //dump($files);
+    $first = reset($files);
+
+    dump($first->getName());
+    */
+  }
+
+  /**
+   * Test variable args.
+   *
+   * @command cb-foo
+   * @param array $args Variable args.
+   */
+  public function commandFoo(array $args = []) {
+    dump('hello!');
+  }
+
+
+
 
 }
