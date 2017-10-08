@@ -262,8 +262,6 @@ class CodeBuilderCommands extends DrushCommands {
     }
 
     // Collect data for the properties.
-    // TODO: boolean components will get asked for, even thought there's no
-    // point since they've been selected.
     $build_values = $this->interactCollectProperties($task_handler_generate, $output, $component_data_info, $build_values);
 
     // Set the values on the context, so the comand callback can get them.
@@ -372,6 +370,14 @@ class CodeBuilderCommands extends DrushCommands {
       else {
         // Simple property.
         $task_handler_generate->prepareComponentDataProperty($property_name, $property_info, $values);
+
+        // Special case for top-level boolean: the user has already effectively
+        // stated the value for this is TRUE, when selecting it in the initial
+        // menu.
+        if ($property_info['format'] == 'boolean' && $nesting == 0) {
+          $values[$property_name] = TRUE;
+          continue;
+        }
 
         $default = $values[$property_name];
 
