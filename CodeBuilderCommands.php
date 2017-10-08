@@ -262,7 +262,10 @@ class CodeBuilderCommands extends DrushCommands {
     }
 
     // Collect data for the properties.
-    $build_values = $this->interactCollectProperties($task_handler_generate, $output, $component_data_info, $build_values);
+    $breadcrumb = [
+      'module' => $build_values['root_name'],
+    ];
+    $build_values = $this->interactCollectProperties($task_handler_generate, $output, $component_data_info, $build_values, $breadcrumb);
 
     // Set the values on the context, so the comand callback can get them.
     // TODO: This is a hack because it's not possible to define dynamic
@@ -311,13 +314,25 @@ class CodeBuilderCommands extends DrushCommands {
    *  passed to prepareComponentDataProperty() already.
    * @param $values
    *  A values array.
-   * @param $nesting
-   *  (optional) A counter indicating the recursion level for this method.
+   * @param $breadcrumb
+   *  An array of the component names and labels seen so far. TODO.
    *
    * @return
    *  The values array with the user-entered values added to it.
    */
-  protected function interactCollectProperties($task_handler_generate, $output, &$data_info, $values, $nesting = 0) {
+  protected function interactCollectProperties($task_handler_generate, $output, &$data_info, $values, $breadcrumb) {
+    // Show breadcrumb, but not on the first level.
+    // This helps to give the user an overview of where they are in the data.
+    if (count($breadcrumb) > 1) {
+      $breadcrumb_string = implode(' » ', $breadcrumb);
+      $output->writeln("<fg=cyan>Current item: $breadcrumb_string</>" . "\n");
+    }
+
+    // Get the name of the first property, so we can put that in the breadcrumb
+    // in case we recurse further. The first property of any component is
+    // typically some sort of ID or name for it.
+    $first_property_name = reset(array_keys($data_info));
+
     foreach ($data_info as $property_name => &$property_info) {
       if (!empty($property_info['skip'])) {
         // TODO! prepare it so it gets defaults!
@@ -330,7 +345,7 @@ class CodeBuilderCommands extends DrushCommands {
         // Treat top-level compound properties as required, since the user
         // selected them in the initial component menu, so should not be asked
         // again.
-        if ($data_info[$property_name]['required'] || $nesting == 0) {
+        if ($data_info[$property_name]['required'] || count($breadcrumb) == 1) {
           $output->writeln("Enter details for {$data_info[$property_name]['label']} (at least one required):");
         }
         else {
@@ -345,6 +360,9 @@ class CodeBuilderCommands extends DrushCommands {
           }
         }
 
+        $nested_breadcrumb = $breadcrumb;
+        $nested_breadcrumb[] = $property_info['label'];
+
         $value = [];
         $delta = 0;
         do {
@@ -352,7 +370,19 @@ class CodeBuilderCommands extends DrushCommands {
           // into it.
           $value[$delta] = [];
 
-          $value[$delta] = $this->interactCollectProperties($task_handler_generate, $output, $data_info[$property_name]['properties'], $value[$delta], $nesting + 1);
+          // Add to the breadcrumb to pass into the recursion.
+          $item_breadcrumb = $nested_breadcrumb;
+          // Use human-friendly index.
+          $breadcrumb_delta = $delta + 1;
+          $item_breadcrumb[] = "Item {$breadcrumb_delta}";
+
+          $value[$delta] = $this->interactCollectProperties(
+            $task_handler_generate,
+            $output,
+            $data_info[$property_name]['properties'],
+            $value[$delta],
+            $item_breadcrumb
+          );
 
           $question = new \Symfony\Component\Console\Question\ConfirmationQuestion(
             dt("Enter more {$data_info[$property_name]['label']}?"),
@@ -374,7 +404,7 @@ class CodeBuilderCommands extends DrushCommands {
         // Special case for top-level boolean: the user has already effectively
         // stated the value for this is TRUE, when selecting it in the initial
         // menu.
-        if ($property_info['format'] == 'boolean' && $nesting == 0) {
+        if ($property_info['format'] == 'boolean' && count($breadcrumb) == 1) {
           $values[$property_name] = TRUE;
           continue;
         }
@@ -384,6 +414,16 @@ class CodeBuilderCommands extends DrushCommands {
         $value = $this->askQuestionForProperty($property_info, $default);
 
         $values[$property_name] = $value;
+
+        // For the first property (which should be non-compound), take the
+        // value and put it into the breadcrumb, so any children below here
+        // get a clearer breadcrumb displayed.
+        if ($property_name == $first_property_name) {
+          array_pop($breadcrumb);
+          // TODO: prefix this with the label? But we don't have that at this
+          // point!
+          $breadcrumb[] = $value;
+        }
       }
     }
 
