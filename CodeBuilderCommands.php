@@ -382,8 +382,8 @@ class CodeBuilderCommands extends DrushCommands {
         $delta = 0;
         do {
           // Initialize a new child item so a default value can be placed
-          // into it.
-          $value[$delta] = [];
+          // into it, or take a default if one already exists for this item.
+          $value[$delta] = $values[$property_name][$delta] ?? [];
 
           // Add to the breadcrumb to pass into the recursion.
           $item_breadcrumb = $nested_breadcrumb;
