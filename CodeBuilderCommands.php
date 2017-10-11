@@ -340,6 +340,14 @@ class CodeBuilderCommands extends DrushCommands {
 
       $task_handler_generate->prepareComponentDataProperty($property_name, $property_info, $values);
 
+      // Show a breadcrumb for the first property after exiting a compound
+      // property, that is, when coming out of a nesting level.
+      if (!empty($breadcrumb_left_nesting)) {
+        $this->outputDataBreadcrumb($output, 'Back to', $breadcrumb);
+
+        $breadcrumb_left_nesting = FALSE;
+      }
+
       if ($property_info['format'] == 'compound') {
         // Compound property: collect multiple items, recursing into this
         // method for each item.
@@ -402,6 +410,9 @@ class CodeBuilderCommands extends DrushCommands {
         }
         while ($enter_another == TRUE);
 
+        // Mark that we've just exited a level of nesting for the breadcrumb.
+        $breadcrumb_left_nesting = TRUE;
+
         $values[$property_name] = $value;
       }
       else {
@@ -422,8 +433,9 @@ class CodeBuilderCommands extends DrushCommands {
         $values[$property_name] = $value;
 
         // For the first property (which should be non-compound), take the
-        // value and put it into the breadcrumb, so any children below here
-        // get a clearer breadcrumb displayed.
+        // value and put it into the breadcrumb, so further output of the
+        // breadcrumb that includes this level has a name rather than just
+        // 'item DELTA'.
         if ($property_name == $first_property_name) {
           array_pop($breadcrumb);
           // TODO: prefix this with the label? But we don't have that at this
