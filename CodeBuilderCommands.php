@@ -339,6 +339,8 @@ class CodeBuilderCommands extends DrushCommands {
         continue;
       }
 
+      $task_handler_generate->prepareComponentDataProperty($property_name, $property_info, $values);
+
       if ($property_info['format'] == 'compound') {
         // Compound property: collect multiple items, recursing into this
         // method for each item.
@@ -356,6 +358,12 @@ class CodeBuilderCommands extends DrushCommands {
           $enter_compound = $this->io()->askQuestion($question);
 
           if (!$enter_compound) {
+            // Zap any defaults the prepare step might have put in, so that if
+            // the user has said they don't want anything here, there's
+            // actually nothing here.
+            unset($values[$property_name]);
+
+            // Move on to the next property.
             continue;
           }
         }
@@ -399,7 +407,6 @@ class CodeBuilderCommands extends DrushCommands {
       }
       else {
         // Simple property.
-        $task_handler_generate->prepareComponentDataProperty($property_name, $property_info, $values);
 
         // Special case for top-level boolean: the user has already effectively
         // stated the value for this is TRUE, when selecting it in the initial
