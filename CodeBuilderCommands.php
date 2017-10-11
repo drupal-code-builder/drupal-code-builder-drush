@@ -324,8 +324,7 @@ class CodeBuilderCommands extends DrushCommands {
     // Show breadcrumb, but not on the first level.
     // This helps to give the user an overview of where they are in the data.
     if (count($breadcrumb) > 1) {
-      $breadcrumb_string = implode(' » ', $breadcrumb);
-      $output->writeln("<fg=cyan>Current item: $breadcrumb_string</>" . "\n");
+      $this->outputDataBreadcrumb($output, 'Current item', $breadcrumb);
     }
 
     // Get the name of the first property, so we can put that in the breadcrumb
@@ -435,6 +434,21 @@ class CodeBuilderCommands extends DrushCommands {
     }
 
     return $values;
+  }
+
+  /**
+   * Output a breadcrumb, showing where the user is in the data structure.
+   *
+   * @param $output
+   *   The output handler.
+   * @param string $label
+   *   A label describing the breadcrumb.
+   * @param string[] $breadcrumb
+   *   An array of strings representing the current position.
+   */
+  protected function outputDataBreadcrumb($output, $label, $breadcrumb) {
+    $breadcrumb_string = implode(' » ', $breadcrumb);
+    $output->writeln("<fg=cyan>$label: $breadcrumb_string</>" . "\n");
   }
 
   /**
