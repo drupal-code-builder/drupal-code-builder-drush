@@ -383,6 +383,7 @@ class CodeBuilderCommands extends DrushCommands {
         $nested_breadcrumb[] = $property_info['label'];
 
         $value = [];
+        $cardinality = $property_info['cardinality'] ?? -1;
         $delta = 0;
         do {
           // Initialize a new child item so a default value can be placed
@@ -391,9 +392,12 @@ class CodeBuilderCommands extends DrushCommands {
 
           // Add to the breadcrumb to pass into the recursion.
           $item_breadcrumb = $nested_breadcrumb;
-          // Use human-friendly index.
-          $breadcrumb_delta = $delta + 1;
-          $item_breadcrumb[] = "Item {$breadcrumb_delta}";
+          // Don't show a delta if the cardinality is 1.
+          if ($cardinality != 1) {
+            // Use human-friendly index.
+            $breadcrumb_delta = $delta + 1;
+            $item_breadcrumb[] = "Item {$breadcrumb_delta}";
+          }
 
           $value[$delta] = $this->interactCollectProperties(
             $task_handler_generate,
@@ -403,14 +407,20 @@ class CodeBuilderCommands extends DrushCommands {
             $item_breadcrumb
           );
 
-          $question = new \Symfony\Component\Console\Question\ConfirmationQuestion(
-            dt("Enter more {$data_info[$property_name]['label']}?"),
-            FALSE
-          );
-          $enter_another = $this->io()->askQuestion($question);
-
-          // Increase the delta for the next loop.
+          // Increase the delta for the next loop and the cardinality check.
           $delta++;
+
+          if ($delta != $cardinality) {
+            $question = new \Symfony\Component\Console\Question\ConfirmationQuestion(
+              dt("Enter more {$data_info[$property_name]['label']}?"),
+              FALSE
+            );
+            $enter_another = $this->io()->askQuestion($question);
+          }
+          else {
+            // Reached maximum cardinality: loop must end.
+            $enter_another = FALSE;
+          }
         }
         while ($enter_another == TRUE);
 
