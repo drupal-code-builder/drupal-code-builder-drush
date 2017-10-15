@@ -21,7 +21,11 @@ class CodeBuilderCommands extends DrushCommands {
   /**
    * Initialize Drupal Code Builder before a command runs.
    *
-   * @hook init @code_builder
+   * This needs to be a post-init hook rather than pre-init because non-module
+   * commands don't get their bookstrap level taken into account in the init
+   * hook -- see https://github.com/drush-ops/drush/issues/3058.
+   *
+   * @hook post-init @code_builder
    */
   public function initializeLibrary() {
     // Check our library is present.
