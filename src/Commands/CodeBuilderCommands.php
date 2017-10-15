@@ -368,7 +368,7 @@ class CodeBuilderCommands extends DrushCommands {
             // Zap any defaults the prepare step might have put in, so that if
             // the user has said they don't want anything here, there's
             // actually nothing here.
-            unset($values[$property_name]);
+            $values[$property_name] = [];
 
             // Move on to the next property.
             continue;
