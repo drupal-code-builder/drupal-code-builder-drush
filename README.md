@@ -5,54 +5,22 @@ The 9.x branch works with Drush 9. For Drush 8, use the 8.x branch.
 
 ## Installation
 
-Due to bugs in Drush 9.x, installing this is not straightforward. There are
-three methods, in order of increasing complexity:
+There are two ways to install this command:
 
-1. Hack it as a Drupal module
-2. Manual installation as a Drush extension
-3. Composer installation as a Drush extension
-
-For details on each method, see below.
+- Composer installation as a Drush extension
+  1. Do `composer require drupal-code-builder/drupal-code-builder-drush` to
+    install this package and its dependencies. You will need your project to
+    use drupal-composer/drupal-project, or have your composer.josn configured
+    to place Drush extensions into drush/contrib.
+- Manual installation as Drush extension
+  1. Place this somewhere Drush will locate it as a command, such as
+    drush/contrib.
+  2. Do `composer require drupal-code-builder/drupal-code-builder` to install
+    the Drupal Coder Builder library.
 
 Once this is installed, do `drush cbu`. This detects hooks, services, and plugin
 types in your Drupal site's codebase and analyses them for use with Drupal Code
 Builder.
-
-### Drupal module installation
-
-1. Place this somewhere Drupal will find it as a module, e.g. modules/custom.
-2. Enable the 'code_buider_drush' module.
-3. Do `composer require drupal-code-builder/drupal-code-builder` to install the
-   Drupal Coder Builder library.
-
-Note that once this works properly as a Drush extension, a future version will
-remove the files that declare this as a Drupal module.
-
-### Manual installation as Drush extension
-
-1. Place this somewhere Drush will locate it as a command.
-2. Do `composer require drupal-code-builder/drupal-code-builder` to install the
-   Drupal Coder Builder library.
-3. Command discovery expects the namespace of the class to match the filepath.
-   Rename this package's folder to 'CodeBuilder' to work around this.
-
-### Composer installation as a Drush extension
-
-1. Do `composer require drupal-code-builder/drupal-code-builder-drush` to
-   install this package and its dependencies.
-
-The following Drush bugs affect command discovery:
-
-- https://github.com/drush-ops/drush/issues/2918: Command files aren't getting
-  searched deeply enough in /drush. As a workaround, the PHP class file can be
-  hacked into DrupalBoot::commandfileSearchpaths by adding to
-  the returned array:
-  ```
-  $commandFiles[FILEPATH] = "\Drush\Commands\CodeBuilder\CodeBuilderCommands";
-  ```
-- https://github.com/drush-ops/drush/issues/2919: Once the command file is
-  registered, this bug causes Drush to crash. As a workaround, change the method
-  DrushCommands::printFile() to protected.
 
 
 ## Usage
