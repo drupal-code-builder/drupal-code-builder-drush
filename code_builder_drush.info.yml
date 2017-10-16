@@ -1,4 +1,0 @@
-name: 'Code Builder Drush'
-type: module
-description: 'Temporary module to make Drupal Code Builder commands visible to Drush.'
-core: 8.x
