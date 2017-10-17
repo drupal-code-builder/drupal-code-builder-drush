@@ -506,20 +506,6 @@ class CodeBuilderCommands extends DrushCommands {
       // Question with options, either string or array format.
       $options = $property_info['options'];
 
-      // Non-required properties need a 'none' option, as Symfony won't
-      // accept an empty value.
-      if (!$property_info['required']) {
-        $options = array_merge(['none' => 'None'], $options) ;
-
-        $default = 'none';
-      }
-
-      $question = new \Symfony\Component\Console\Question\ChoiceQuestion(
-        $this->getQuestionPromptForProperty("Enter the @label", $property_info),
-        $options,
-        $default
-      );
-
       // If the property has extra options, add then to the autocompleter
       // values.
       if (isset($property_info['options_extra'])) {
@@ -530,27 +516,78 @@ class CodeBuilderCommands extends DrushCommands {
         // the whole array as associative and use the numeric keys in the extra.
         $visible_options = array_keys($options);
 
-        $all_options = array_merge($visible_options, $extra_options);
-        $question->setAutocompleterValues($all_options);
+        $autocomplete_options = array_merge($visible_options, $extra_options);
+      }
+      else {
+        $autocomplete_options = $options;
       }
 
       if ($property_info['format'] == 'array') {
-        // TODO: bug in symfony, autocomplete only works on the first value in
-        // a multiselect question.
-        $question->setMultiselect(TRUE);
-      }
-
-      // Note that this bypasses DrushStyle::choice()'s override, which
-      // converts the options to be keyed numerically, thus hiding the machine
-      // name. Good or bad thing for us?
-      $value = $this->io()->askQuestion($question);
-
-      // Get rid of the 'none' value if that was the default.
-      if ($value === ['none']) {
+        // Multi-valued property.
+        // TODO: consider adding the explanation message on its own line first --
+        // but need to work out how to format it, in the face of nonexistent
+        // documentation in Symfony code.
         $value = [];
+
+        $question = new \Symfony\Component\Console\Question\ChoiceQuestion(
+          $this->getQuestionPromptForProperty("Enter the @label, one per line, empty line to finish", $property_info),
+          $options,
+          $default
+        );
+        $question->setAutocompleterValues($autocomplete_options);
+        // Hack to work around the question not allowing an empty answer.
+        // See https://github.com/drush-ops/drush/issues/2931
+        $question->setValidator(function ($answer) { return $answer; });
+
+        // TODO: bug in Symfony, autocomplete only works on the first value in
+        // a multiselect question. To work around, ask a series of questions,
+        // allowing the user to end the process with an empty response.
+        do {
+          $single_value = $this->io()->askQuestion($question);
+
+          if (!empty($single_value)) {
+            $value[] = $single_value;
+          }
+
+          // For subsequent iterations, the question should not show options.
+          $question = new \Symfony\Component\Console\Question\Question(
+            $this->getQuestionPromptForProperty("Enter further @label, one per line, empty line to finish", $property_info),
+            $default
+          );
+          $question->setAutocompleterValues($autocomplete_options);
+          // Hack to work around the question not allowing an empty answer.
+          // See https://github.com/drush-ops/drush/issues/2931
+          $question->setValidator(function ($answer) { return $answer; });
+        }
+        while (!empty($single_value));
       }
-      // Symfony appears to give us an array for a multiselect question, which
-      // what we want.
+      else {
+        // Single-valued property.
+        // Non-required properties need a 'none' option, as Symfony won't
+        // accept an empty value.
+        if (!$property_info['required']) {
+          $options = array_merge(['none' => 'None'], $options) ;
+
+          $default = 'none';
+        }
+
+        $question = new \Symfony\Component\Console\Question\ChoiceQuestion(
+          $this->getQuestionPromptForProperty("Enter the @label", $property_info),
+          $options,
+          $default
+        );
+        $question->setAutocompleterValues($autocomplete_options);
+
+        // Note that this bypasses DrushStyle::choice()'s override, which
+        // converts the options to be keyed numerically, thus hiding the machine
+        // name. Good or bad thing for us?
+        $value = $this->io()->askQuestion($question);
+
+        // Get rid of the 'none' value if that was the default.
+        if ($value === 'none') {
+          $value = '';
+        }
+      }
     }
     elseif ($property_info['format'] == 'array') {
       // Array without options to choose from.
