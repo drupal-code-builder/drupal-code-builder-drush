@@ -520,6 +520,20 @@ class CodeBuilderCommands extends DrushCommands {
         $default
       );
 
+      // If the property has extra options, add then to the autocompleter
+      // values.
+      if (isset($property_info['options_extra'])) {
+        // Only use the keys from the extra options array, as the values are
+        // only meant to be labels.
+        $extra_options = array_keys($property_info['options_extra']);
+        // Do the same to the visible options, as otherwise Symfony will treat
+        // the whole array as associative and use the numeric keys in the extra.
+        $visible_options = array_keys($options);
+
+        $all_options = array_merge($visible_options, $extra_options);
+        $question->setAutocompleterValues($all_options);
+      }
+
       if ($property_info['format'] == 'array') {
         // TODO: bug in symfony, autocomplete only works on the first value in
         // a multiselect question.
