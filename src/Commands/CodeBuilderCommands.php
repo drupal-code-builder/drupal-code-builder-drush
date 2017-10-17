@@ -946,7 +946,7 @@ class CodeBuilderCommands extends DrushCommands {
    * @aliases cbu
    * @code_builder
    */
-  public function commandUpdateDefinitions($options = ['test' => FALSE]) {
+  public function commandUpdateDefinitions(OutputInterface $output, $options = ['test' => FALSE]) {
     // Get our task handler. This performs a sanity check which throws an
     // exception.
     $task_handler_collect = $this->getCodeBuilderTask('Collect');
@@ -962,7 +962,7 @@ class CodeBuilderCommands extends DrushCommands {
 
     $hooks_directory = \DrupalCodeBuilder\Factory::getEnvironment()->getHooksDirectory();
 
-    drush_print("Data on hooks, services, and plugin types has been copied to {$hooks_directory} and processed.");
+    $output->writeln("Data on hooks, services, and plugin types has been copied to {$hooks_directory} and processed.");
 
     return TRUE;
   }
