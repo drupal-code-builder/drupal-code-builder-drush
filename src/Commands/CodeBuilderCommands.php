@@ -512,11 +512,11 @@ class CodeBuilderCommands extends DrushCommands {
         // Only use the keys from the extra options array, as the values are
         // only meant to be labels.
         $extra_options = array_keys($property_info['options_extra']);
-        // Do the same to the visible options, as otherwise Symfony will treat
-        // the whole array as associative and use the numeric keys in the extra.
-        $visible_options = array_keys($options);
 
-        $autocomplete_options = array_merge($visible_options, $extra_options);
+        // TODO: add an explanation that further options may be used.
+        // TODO: slight inconsistency as in this case the labels won't be
+        // available as autocomplete values.
+        $autocomplete_options = $extra_options;
       }
       else {
         $autocomplete_options = $options;
