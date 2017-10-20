@@ -955,7 +955,11 @@ class CodeBuilderCommands extends DrushCommands {
     // Hidden* option for developers: downloads a subset of hooks to create the
     // data for Drupal Code Builder's unit tests.
     // [*] Not actually hidden from the help, unfortunately.
+    // TODO: change this to a hidden command.
     if ($options['test']) {
+      \DrupalCodeBuilder\Factory::setEnvironmentLocalClass('WriteTestsSampleLocation')
+        ->setCoreVersionNumber(drush_drupal_version());
+
       $task_handler_collect = \DrupalCodeBuilder\Factory::getTask('Testing\CollectTesting');
     }
 
