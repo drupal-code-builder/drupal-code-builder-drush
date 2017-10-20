@@ -504,6 +504,7 @@ class CodeBuilderCommands extends DrushCommands {
 
     if (isset($property_info['options'])) {
       // Question with options, either string or array format.
+      // TODO: validate must be one of options.
       $options = $property_info['options'];
 
       // If the property has extra options, add then to the autocompleter
