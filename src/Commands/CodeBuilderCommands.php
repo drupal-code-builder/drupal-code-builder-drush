@@ -72,7 +72,8 @@ class CodeBuilderCommands extends DrushCommands {
   /**
    * Generate code to add to or create a Drupal module.
    *
-   * @command cb-module
+   * @command cb:module
+   *
    * @param string $module_name The module name. If this is a '.', the module at
    *    the current location is used. Will be prompted for if omitted.
    * @param string $component_type The component type. Will be prompted for if
@@ -934,7 +935,8 @@ class CodeBuilderCommands extends DrushCommands {
   /**
    * Update analysis data on Drupal components.
    *
-   * @command cb-update
+   * @command cb:update
+   *
    * @usage drush cb-update
    *   Update data on Drupal components, storing in the default location.
    * @usage drush cb-update --data-location=relative/path
@@ -972,7 +974,8 @@ class CodeBuilderCommands extends DrushCommands {
   /**
    * List stored analysis data on Drupal components.
    *
-   * @command cb-list
+   * @command cb:list
+   *
    * @option type Which type of data to list. One of:
    *   'all': show everything.
    *   'hooks': show hooks.
