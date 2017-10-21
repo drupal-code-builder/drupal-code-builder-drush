@@ -69,7 +69,7 @@ class CodeBuilderCommands extends DrushCommands {
   }
 
   /**
-   * Build a Drupal component.
+   * Generate code to add to or create a Drupal module.
    *
    * @command cb-module
    * @param string $module_name The module name. If this is a '.', the module at
@@ -931,7 +931,7 @@ class CodeBuilderCommands extends DrushCommands {
   }
 
   /**
-   * Updates Drupal component definitions.
+   * Update analysis data on Drupal components.
    *
    * @command cb-update
    * @usage drush cb-update
@@ -959,7 +959,7 @@ class CodeBuilderCommands extends DrushCommands {
   }
 
   /**
-   * Lists stored Drupal component definitions.
+   * List stored analysis data on Drupal components.
    *
    * @command cb-list
    * @option type Which type of data to list. One of:
