@@ -8,6 +8,7 @@ use Consolidation\AnnotatedCommand\CommandError;
 use Drush\Commands\DrushCommands;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Helper\Table;
 
 /**
  * Provides commands for generating code with the Drupal Code Builder library.
@@ -949,11 +950,21 @@ class CodeBuilderCommands extends DrushCommands {
     // exception.
     $task_handler_collect = $this->getCodeBuilderTask('Collect');
 
-    $task_handler_collect->collectComponentData();
+    $result = $task_handler_collect->collectComponentData();
 
     $hooks_directory = \DrupalCodeBuilder\Factory::getEnvironment()->getHooksDirectory();
 
-    $output->writeln("Data on hooks, services, and plugin types has been copied to {$hooks_directory} and processed.");
+    $output->writeln("Drupal Code Builder's analysis has detected the following in your Drupal codebase:");
+
+    $table = new Table($output);
+    $table->setHeaders(array('Type', 'Count'));
+    foreach ($result as $label => $count) {
+      $rows[] = [ucfirst($label), $count];
+    }
+    $table->setRows($rows);
+    $table->render();
+
+    $output->writeln("Data has been processed and written to {$hooks_directory}.");
 
     return TRUE;
   }
