@@ -941,27 +941,13 @@ class CodeBuilderCommands extends DrushCommands {
    * @usage drush cb-update --data-location=/absolute/path
    *   Update data on hooks, storing data in /absolute/path.
    * @bootstrap DRUSH_BOOTSTRAP_DRUPAL_FULL
-   * @option test Store a subset of data into the location used for tests, to
-   *   be used as sample data.
-   * @hidden-options test
    * @aliases cbu
    * @code_builder
    */
-  public function commandUpdateDefinitions(OutputInterface $output, $options = ['test' => FALSE]) {
+  public function commandUpdateDefinitions(OutputInterface $output) {
     // Get our task handler. This performs a sanity check which throws an
     // exception.
     $task_handler_collect = $this->getCodeBuilderTask('Collect');
-
-    // Hidden* option for developers: downloads a subset of hooks to create the
-    // data for Drupal Code Builder's unit tests.
-    // [*] Not actually hidden from the help, unfortunately.
-    // TODO: change this to a hidden command.
-    if ($options['test']) {
-      \DrupalCodeBuilder\Factory::setEnvironmentLocalClass('WriteTestsSampleLocation')
-        ->setCoreVersionNumber(drush_drupal_version());
-
-      $task_handler_collect = \DrupalCodeBuilder\Factory::getTask('Testing\CollectTesting');
-    }
 
     $task_handler_collect->collectComponentData();
 
