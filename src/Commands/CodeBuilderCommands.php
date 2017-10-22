@@ -976,11 +976,14 @@ class CodeBuilderCommands extends DrushCommands {
    *
    * @command cb:list
    *
-   * @option type Which type of data to list. One of:
+   * @option type Which type of data to list. The valid options are defined
+   * by DrupalCodeBuilder, and include:
    *   'all': show everything.
    *   'hooks': show hooks.
    *   'plugins': show plugin types.
    *   'services': show services.
+   *   'tags': show tagged service types.
+   *   'fields': show field types.
    * @usage drush cb-list
    *   List stored analysis data on Drupal components.
    * @usage drush cb-list --type=plugins
@@ -989,89 +992,63 @@ class CodeBuilderCommands extends DrushCommands {
    * @aliases cbl
    * @code_builder
    */
-  public function commandListDefinitions($options = ['type' => 'all']) {
-    // Get our task handler, which checks hook data is ready.
-    $mb_task_handler_report = $this->getCodeBuilderTask('ReportHookData');
+  public function commandListDefinitions(OutputInterface $output, $options = ['type' => 'all']) {
+    // TODO: add a --format option, same as 'drush list'.
+    // TODO: add a --filter option, same as 'drush list'.
+    // TODO: restore listing hook presets.
 
-    $type = $options['type'];
+    // Callback for array_walk() to concatenate the array key and value.
+    $list_walker = function (&$value, $key) {
+      $value = "{$key}: $value";
+    };
 
-    if ($type == 'hooks' || $type == 'all') {
-      $data = $mb_task_handler_report->listHookData();
+    $task_report = $this->getCodeBuilderTask('ReportSummary');
 
-      // TODO -- redo this as a --format option, same as 'drush list'.
-      /*
-      if (drush_get_option('raw')) {
-        drush_print_r($data);
-        return;
+    $data = $task_report->listStoredData();
+
+    if ($options['type'] != 'all') {
+      if (!isset($data[$options['type']])) {
+        throw new \Exception("Invalid type '{$options['type']}'.");
       }
-      */
 
-      // TODO - redo this as a --filter option, same as 'drush list'.
-      /*
-      if (count($commands)) {
-        // Put the requested filenames into the keys of an array, and intersect them
-        // with the hook data.
-        $files_requested = array_fill_keys($commands, TRUE);
-        $data_requested = array_intersect_key($data, $files_requested);
+      $data = array_intersect_key($data, [$options['type'] => TRUE]);
+    }
+
+    foreach ($data as $type_data) {
+      $this->io()->title($type_data['label'] . ':');
+
+      if (is_array(reset($type_data['list']))) {
+        // Grouped list.
+        foreach ($type_data['list'] as $group_title => $group_list) {
+          $this->io()->section($group_title);
+
+          array_walk($group_list, $list_walker);
+          $this->io()->listing($group_list);
+        }
       }
       else {
-        $data_requested = $data;
-      }
-
-      if (!count($data_requested) && count($files_requested)) {
-        drush_print(t("No hooks found for the specified files."));
-      }
-      */
-
-      drush_print("Hooks:");
-      foreach ($data as $file => $hooks) {
-        drush_print("Group $file:", 2);
-        foreach ($hooks as $key => $hook) {
-          drush_print($hook['name'] . ': ' . $hook['description'], 4);
-        }
-      }
-
-      // List presets.
-      $mb_task_handler_report_presets = $this->getCodeBuilderTask('ReportHookPresets');
-
-      $hook_presets = $mb_task_handler_report_presets->getHookPresets();
-      foreach ($hook_presets as $hook_preset_name => $hook_preset_data) {
-        drush_print("Preset $hook_preset_name: " . $hook_preset_data['label'], 2);
-        foreach ($hook_preset_data['hooks'] as $hook) {
-          drush_print($hook, 4);
-        }
+        array_walk($type_data['list'], function (&$value, $key) {
+          $value = "{$key}: $value";
+        });
+        $this->io()->listing($type_data['list']);
       }
     }
 
-    // TODO: don't need to check version, this is on 8 now.
-    if (drush_drupal_major_version() == 8) {
-      if ($type == 'plugins' || $type == 'all') {
-        $mb_task_handler_report_plugins = $this->getCodeBuilderTask('ReportPluginData');
-
-        $data = $mb_task_handler_report_plugins->listPluginData();
-
-        drush_print("Plugins types:");
-        foreach ($data as $plugin_type_id => $plugin_type_data) {
-          drush_print($plugin_type_id, 2);
-        }
+    // Show a table summarizing counts.
+    if ($options['type'] == 'all') {
+      $table = new \Symfony\Component\Console\Helper\Table($output);
+      $table->setHeaders(array('Type', 'Count'));
+      foreach ($data as $type_data) {
+        $rows[] = [$type_data['label'], $type_data['count']];
       }
-
-      if ($type == 'services' || $type == 'all') {
-        $mb_task_handler_report_services = $this->getCodeBuilderTask('ReportServiceData');
-
-        $data = $mb_task_handler_report_services->listServiceData();
-
-        drush_print("Services:");
-        foreach ($data as $service_id => $service_info) {
-          drush_print($service_id, 2);
-        }
-      }
+      $table->setRows($rows);
+      $table->render();
     }
 
-    $time = $mb_task_handler_report->lastUpdatedDate();
+    $time = $task_report->lastUpdatedDate();
     $hooks_directory = \DrupalCodeBuilder\Factory::getEnvironment()->getHooksDirectory();
-    drush_print(t("Component data retrieved from @dir.", array('@dir' => $hooks_directory)));
-    drush_print(t("Component data was processed on @time.", array(
+    $output->writeln(strtr("Component data retrieved from @dir.", array('@dir' => $hooks_directory)));
+    $output->writeln(strtr("Component data was processed on @time.", array(
       '@time' => date(DATE_RFC822, $time),
     )));
   }
