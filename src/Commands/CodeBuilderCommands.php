@@ -84,14 +84,14 @@ class CodeBuilderCommands extends DrushCommands {
    *    exist. A '.' means the current location. This option is ignored if the
    *    module already exists.
    * @option dry-run If specified, no files are written.
-   * @usage drush cb-module
+   * @usage drush cb:module
    *    Build a Drupal component for a module, with interactive prompt.
-   * @usage drush cb-module .
+   * @usage drush cb:module .
    *    Build a Drupal component for the module at the current location, with
    *    interactive prompt.
-   * @usage drush cb-module my_module module
+   * @usage drush cb:module my_module module
    *    Build the basic module 'my_module'.
-   * @usage drush cb-update my_module plugins
+   * @usage drush cb:update my_module plugins
    *    Add plugins to the module 'my_module'. If the module doesn't exist, it
    *    will be created.
    * @bootstrap DRUSH_BOOTSTRAP_DRUPAL_FULL
@@ -111,7 +111,7 @@ class CodeBuilderCommands extends DrushCommands {
   ) {
     // Interactive mode is required, bail otherwise.
     if (!$input->isInteractive()) {
-      throw new \Exception("The cb-module command must be run in interactive mode.");
+      throw new \Exception("The cb:module command must be run in interactive mode.");
     }
 
     try {
@@ -136,7 +136,7 @@ class CodeBuilderCommands extends DrushCommands {
   /**
    * Set the module name to the current directory if not provided.
    *
-   * @hook init cb-module
+   * @hook init cb:module
    */
   public function initializeBuildComponent(InputInterface $input, AnnotationData $annotationData) {
     $module_name = $input->getArgument('module_name');
@@ -156,7 +156,7 @@ class CodeBuilderCommands extends DrushCommands {
   /**
    * Get the component type if not provided.
    *
-   * @hook interact cb-module
+   * @hook interact cb:module
    */
   public function interactBuildComponent(InputInterface $input, OutputInterface $output, AnnotationData $annotationData) {
     // Get the generator task.
@@ -677,7 +677,7 @@ class CodeBuilderCommands extends DrushCommands {
   }
 
   /**
-   * @hook validate cb-module
+   * @hook validate cb:module
    */
   public function validateBuildComponent(CommandData $commandData) {
     $input = $commandData->input();
@@ -937,11 +937,11 @@ class CodeBuilderCommands extends DrushCommands {
    *
    * @command cb:update
    *
-   * @usage drush cb-update
+   * @usage drush cb:update
    *   Update data on Drupal components, storing in the default location.
-   * @usage drush cb-update --data-location=relative/path
+   * @usage drush cb:update --data-location=relative/path
    *   Update data on hooks, storing data in public://relative/path.
-   * @usage drush cb-update --data-location=/absolute/path
+   * @usage drush cb:update --data-location=/absolute/path
    *   Update data on hooks, storing data in /absolute/path.
    * @bootstrap DRUSH_BOOTSTRAP_DRUPAL_FULL
    * @aliases cbu
@@ -984,9 +984,9 @@ class CodeBuilderCommands extends DrushCommands {
    *   'services': show services.
    *   'tags': show tagged service types.
    *   'fields': show field types.
-   * @usage drush cb-list
+   * @usage drush cb:list
    *   List stored analysis data on Drupal components.
-   * @usage drush cb-list --type=plugins
+   * @usage drush cb:list --type=plugins
    *   List stored analysis data on Drupal plugin types.
    * @bootstrap DRUSH_BOOTSTRAP_DRUPAL_FULL
    * @aliases cbl
