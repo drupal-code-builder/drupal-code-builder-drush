@@ -559,6 +559,34 @@ function drush_module_builder_build_component($commands, $component_type, $compo
   }
 
   // Build the component data array from the given commands.
+  $component_data = module_builder_drush_interactive_collect_properties($mb_task_handler_generate, $component_data_info, $component_data, $plain_commands, $interactive);
+
+  // Generate the component.
+  $files = $mb_task_handler_generate->generateComponent($component_data);
+
+  $component_dir = module_builder_get_component_folder($component_type, $component_data['root_name']);
+
+  // Finally, output the files!
+  module_builder_drush_output_code($component_dir, $files);
+}
+
+/**
+ * Interactively collects values for a data properties info array.
+ *
+ * This recurses into itself for compound properties.
+ *
+ * @param $task_handler_generate
+ *  The generate task handler.
+ * @param &$data_info
+ *  A data info array about properties to collect. This should not have been
+ *  passed to prepareComponentDataProperty() already.
+ * @param $component_data
+ *  A values array.
+ *
+ * @return
+ *  The values array with the user-entered values added to it.
+ */
+function module_builder_drush_interactive_collect_properties($mb_task_handler_generate, $component_data_info, $component_data, $plain_commands, $interactive) {
   // Work through the component data info, assembling the component data array
   // Each property info needs to be prepared, so iterate by reference.
   foreach ($component_data_info as $property_name => &$property_info) {
@@ -744,14 +772,7 @@ function drush_module_builder_build_component($commands, $component_type, $compo
     $component_data[$property_name] = $value;
   }
 
-
-  // Generate the component.
-  $files = $mb_task_handler_generate->generateComponent($component_data);
-
-  $component_dir = module_builder_get_component_folder($component_type, $component_data['root_name']);
-
-  // Finally, output the files!
-  module_builder_drush_output_code($component_dir, $files);
+  return $component_data;
 }
 
 /**
