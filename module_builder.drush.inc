@@ -779,6 +779,14 @@ function drush_module_builder_build_component($commands, $component_type, $compo
  *  The value obtained from the user.
  */
 function module_builder_drush_interactive_prompt($property_name, $property_info, $component_data, $default, $delta = NULL, $first_child = FALSE) {
+  // Indent child properties to make the structure clearer.
+  if (!is_null($delta)) {
+    $indent = '  ';
+  }
+  else {
+    $indent = '';
+  }
+
   // Show the user the available options, unless told not to.
   $numeric_options = FALSE;
   if (isset($property_info['options']) && empty($property_info['drush_no_option_list'])) {
@@ -807,20 +815,22 @@ function module_builder_drush_interactive_prompt($property_name, $property_info,
     drush_print("{$property_info['parent_label']}: $human_delta");
   }
 
+  $prompt = $indent;
+
   // Make a prompt string, letting the user know if the input is optional
   // so they don't waste time typing.
   switch ($property_info['format']) {
     case 'array':
-      $prompt = "Enter the {$property_info['label']}, as a space separated list";
+      $prompt .= "Enter the {$property_info['label']}, as a space separated list";
       break;
     case 'boolean':
-      $prompt = "Do you want a {$property_info['label']}";
+      $prompt .= "Do you want a {$property_info['label']}";
       $prompt .= ' ' . "(y/n)";
       // Set the default.
-      $default = empty($default) ? 'n' : 'y';
+      $default .= empty($default) ? 'n' : 'y';
       break;
     case 'string':
-      $prompt = "Enter the {$property_info['label']}";
+      $prompt .= "Enter the {$property_info['label']}";
   }
   if (empty($property_info['required']) && empty($component_data[$property_name])) {
     $prompt .= ' ' . "(optional)";
@@ -834,11 +844,6 @@ function module_builder_drush_interactive_prompt($property_name, $property_info,
   $required = $property_info['required'];
   if ($first_child) {
     $required = FALSE;
-  }
-
-  // Indent child properties to make the structure clearer.
-  if (!is_null($delta)) {
-    $prompt = '  ' . $prompt;
   }
 
   $value = drush_prompt($prompt, $default, $required);
