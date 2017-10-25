@@ -280,11 +280,17 @@ function drush_module_builder_callback_build_module() {
     'permissions' => array(
       'command_prefix' => 'perms',
     ),
+    'content_entity_types' =>  array(
+      'command_prefix' => 'content',
+    ),
     'services' => array(
       'command_prefix' => 'services',
     ),
     'plugins' => array(
       'command_prefix' => 'plugins',
+    ),
+    'plugin_types' => array(
+      'command_prefix' => 'pt',
     ),
     'forms' => array(
       'command_prefix' => 'forms',
@@ -294,6 +300,9 @@ function drush_module_builder_callback_build_module() {
     ),
     'router_items' => array(
       'command_prefix' => 'routes',
+    ),
+    'phpunit_tests' => array(
+      'command_prefix' => 'phpunit',
     ),
   );
 
