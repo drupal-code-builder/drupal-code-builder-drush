@@ -838,6 +838,9 @@ function module_builder_drush_interactive_prompt($property_name, $property_info,
   if ($first_child) {
     $prompt .= ' ' . "(leave blank to finish entering {$property_info['parent_label']})";
   }
+  if (!empty($property_info['description'])) {
+    $prompt .= "\n{$indent}({$property_info['description']})";
+  }
 
   // Hack the 'required' property for first child, so the user can enter an
   // empty string and exit the child properties loop.
