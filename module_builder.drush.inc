@@ -687,7 +687,7 @@ function module_builder_drush_interactive_collect_properties($mb_task_handler_ge
         // handling of the compound property.
         $delta = 0;
         $child_property_names = array_keys($property_info['properties']);
-        while (TRUE) {
+        do {
           // Initialize a new child item so a default value can be placed
           // into it.
           $value[$delta] = [];
@@ -724,15 +724,25 @@ function module_builder_drush_interactive_collect_properties($mb_task_handler_ge
               // been put in it.
               unset($value[$delta]);
 
-              goto endcompound;
-            }
+              // This tells the while loop for child items to end.
+              $enter_another = FALSE;
 
-            $value[$delta][$child_property_name] = $child_value;
+              // Break out of the loop on properties, to reach the end of the
+              // while loop for child items.
+              break;
+            }
+            else {
+              // Store the value.
+              $value[$delta][$child_property_name] = $child_value;
+
+              // Keep going with child items.
+              $enter_another = TRUE;
+            }
           }
 
           $delta++;
         }
-        endcompound:
+        while ($enter_another == TRUE);
       }
       else {
         $value = module_builder_drush_interactive_prompt($property_name, $property_info, $component_data, $default);
