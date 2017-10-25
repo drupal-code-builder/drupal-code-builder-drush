@@ -559,8 +559,14 @@ function drush_module_builder_build_component($commands, $component_type, $compo
   }
 
   // Build the component data array from the given commands.
-  $component_data = module_builder_drush_interactive_collect_properties($mb_task_handler_generate, $component_data_info, $component_data, $plain_commands, $interactive);
-
+  $component_data = module_builder_drush_interactive_collect_properties(
+    $mb_task_handler_generate,
+    $component_data_info,
+    $component_data,
+    $plain_commands,
+    $prefixed_commands,
+    $interactive
+  );
   // Generate the component.
   $files = $mb_task_handler_generate->generateComponent($component_data);
 
@@ -586,10 +592,18 @@ function drush_module_builder_build_component($commands, $component_type, $compo
  * @return
  *  The values array with the user-entered values added to it.
  */
-function module_builder_drush_interactive_collect_properties($mb_task_handler_generate, $component_data_info, $component_data, $plain_commands, $interactive) {
+function module_builder_drush_interactive_collect_properties($mb_task_handler_generate, $component_data_info, $component_data, $plain_commands, $prefixed_commands, $interactive, $nesting = 0) {
   // Work through the component data info, assembling the component data array
   // Each property info needs to be prepared, so iterate by reference.
   foreach ($component_data_info as $property_name => &$property_info) {
+    // Track whether the property is the first of this list.
+    if (!isset($first_child)) {
+      $first_child = TRUE;
+    }
+    elseif ($first_child) {
+      $first_child = FALSE;
+    }
+
     // Prepare the single property: get options, default value, etc.
     $mb_task_handler_generate->prepareComponentDataProperty($property_name, $property_info, $component_data);
 
@@ -692,52 +706,45 @@ function module_builder_drush_interactive_collect_properties($mb_task_handler_ge
           // into it.
           $value[$delta] = [];
 
-          foreach ($property_info['properties'] as $child_property_name => &$child_property_info) {
-            // Prepare the child property so we get defaults.
-            // (The call to prepare the compound property will have already
-            // filled in defaults, but it's safe to call this again.)
-            $mb_task_handler_generate->prepareComponentDataProperty($child_property_name, $child_property_info, $value[$delta]);
+          // Show heading for a nested item.
+          $indent = str_repeat('  ', $nesting);
+          $human_delta = $delta + 1;
+          drush_print($indent . "{$property_info['label']}: $human_delta");
 
-            // Turn empty defaults into a value that Drush won't output.
-            $default = empty($value[$delta][$child_property_name]) ? NULL : $value[$delta][$child_property_name];
+          // Set up parameters to pass to the recursive call.
+          $child_property_info = $property_info['properties'];
+          // Hack the parent label into all the child properties, for use by
+          // prompt.
+          foreach ($child_property_info as &$property) {
+            $property['parent_label'] = $property_info['label'];
+          }
 
-            // The first child property gets special treatment: don't propose a
-            // default for it, and force it to be non-required. This is because
-            // otherwise it would be impossible to leave the loop of collecting
-            // child items, as leaving this property empty is the way for the
-            // user to cause that.
-            $first_child = ($child_property_name == $child_property_names[0]);
+          // TODO; fix pass in of component_data.
+          $child_component_data = [];
+          $item_component_data = module_builder_drush_interactive_collect_properties(
+            $mb_task_handler_generate,
+            $child_property_info,
+            $child_component_data,
+            $plain_commands,
+            $prefixed_commands,
+            $interactive,
+            $nesting + 1
+          );
 
-            if ($first_child) {
-              $default = '';
-            }
+          if ($item_component_data === NULL) {
+            // Remove the child item we created for this delta, as nothing's
+            // been put in it.
+            unset($value[$delta]);
 
-            // Add the parent label so we can use it in prompts.
-            $child_property_info['parent_label'] = $property_info['label'];
+            // This tells the while loop for child items to end.
+            $enter_another = FALSE;
+          }
+          else {
+            // Store the value.
+            $value[$delta] = $item_component_data;
 
-            $child_value = module_builder_drush_interactive_prompt($child_property_name, $child_property_info, $component_data[$child_property_name], $default, $delta, $first_child);
-
-            // If the first property is empty, stop collecting child items.
-            if ($first_child && empty($child_value)) {
-              // Bail on both the while and the foreach loops: XKCD dinosaur!
-              // Remove the child item we created for this delta, as nothing's
-              // been put in it.
-              unset($value[$delta]);
-
-              // This tells the while loop for child items to end.
-              $enter_another = FALSE;
-
-              // Break out of the loop on properties, to reach the end of the
-              // while loop for child items.
-              break;
-            }
-            else {
-              // Store the value.
-              $value[$delta][$child_property_name] = $child_value;
-
-              // Keep going with child items.
-              $enter_another = TRUE;
-            }
+            // Keep going with child items.
+            $enter_another = TRUE;
           }
 
           $delta++;
@@ -745,7 +752,22 @@ function module_builder_drush_interactive_collect_properties($mb_task_handler_ge
         while ($enter_another == TRUE);
       }
       else {
-        $value = module_builder_drush_interactive_prompt($property_name, $property_info, $component_data, $default);
+        // Single-valued property.
+        $value = module_builder_drush_interactive_prompt(
+          $property_name,
+          $property_info,
+          $component_data,
+          $default,
+          $nesting,
+          $first_child
+        );
+
+        // If this is the first property of a component, and it got a NULL
+        // value, then this means we should bail on the entire current
+        // component, and terminate entering the child property we are within.
+        if ($first_child && $value === NULL) {
+          return NULL;
+        }
       }
     } // End interactive.
 
@@ -799,9 +821,9 @@ function module_builder_drush_interactive_collect_properties($mb_task_handler_ge
  *  value will be placed in the top level of this array.
  * @param $default
  *  The default value for the property.
- * @param $delta
- *  (optional) If the property is a child property, the delta of the current
- *  component.
+ * @param $nesting
+ *  Indicates the level of recursion for the property list this property is
+ *  a part of.
  * @param $first_child
  *  (optional) If the property is a child property, TRUE to indicate it's the
  *  first of the children. Defaults to FALSE.
@@ -809,14 +831,9 @@ function module_builder_drush_interactive_collect_properties($mb_task_handler_ge
  * @return
  *  The value obtained from the user.
  */
-function module_builder_drush_interactive_prompt($property_name, $property_info, $component_data, $default, $delta = NULL, $first_child = FALSE) {
+function module_builder_drush_interactive_prompt($property_name, $property_info, $component_data, $default, $nesting, $first_child) {
   // Indent child properties to make the structure clearer.
-  if (!is_null($delta)) {
-    $indent = '  ';
-  }
-  else {
-    $indent = '';
-  }
+  $indent = str_repeat('  ', $nesting);
 
   // Show the user the available options, unless told not to.
   $numeric_options = FALSE;
@@ -839,13 +856,6 @@ function module_builder_drush_interactive_prompt($property_name, $property_info,
     }
   }
 
-  // If this is the first child of a compound component, introduce the current
-  // delta.
-  if ($first_child) {
-    $human_delta = $delta + 1;
-    drush_print("{$property_info['parent_label']}: $human_delta");
-  }
-
   $prompt = $indent;
 
   // Make a prompt string, letting the user know if the input is optional
@@ -866,17 +876,24 @@ function module_builder_drush_interactive_prompt($property_name, $property_info,
   if (empty($property_info['required']) && empty($component_data[$property_name])) {
     $prompt .= ' ' . "(optional)";
   }
-  if ($first_child) {
+  if ($first_child && $nesting) {
+    // Special handling for a first child in a nested component.
+    // Tell the user how they can exit this nested component loop.
+    // TODO! parent label!
     $prompt .= ' ' . "(leave blank to finish entering {$property_info['parent_label']})";
+
+    // Kill the default so the user can enter an empty value easily.
+    // (Note that Drush 8 treats NULL and '' differently.)
+    $default = NULL;
   }
   if (!empty($property_info['description'])) {
     $prompt .= "\n{$indent}({$property_info['description']})";
   }
 
-  // Hack the 'required' property for first child, so the user can enter an
-  // empty string and exit the child properties loop.
+  // Hack the 'required' property for first child of a nested item, so the user
+  // can enter an empty string and exit the child properties loop.
   $required = $property_info['required'];
-  if ($first_child) {
+  if ($first_child && $nesting) {
     $required = FALSE;
   }
 
