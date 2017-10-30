@@ -506,7 +506,6 @@ class CodeBuilderCommands extends DrushCommands {
 
     if (isset($property_info['options'])) {
       // Question with options, either string or array format.
-      // TODO: validate must be one of options.
       $options = $property_info['options'];
 
       // If the property has extra options, add then to the autocompleter
@@ -539,7 +538,19 @@ class CodeBuilderCommands extends DrushCommands {
         $question->setAutocompleterValues($autocomplete_options);
         // Hack to work around the question not allowing an empty answer.
         // See https://github.com/drush-ops/drush/issues/2931
-        $question->setValidator(function ($answer) { return $answer; });
+        $question->setValidator(function ($answer) use ($autocomplete_options) {
+          // Allow an empty answer.
+          if (empty($answer)) {
+            return $answer;
+          }
+
+          // Keep the normal Console error message for an invalid option.
+          if (!in_array(strtolower($answer), array_map('strtolower', $autocomplete_options))) {
+            throw new \Exception("Value \"{$answer}\" is invalid.");
+          }
+
+          return $answer;
+        });
 
         // TODO: bug in Symfony, autocomplete only works on the first value in
         // a multiselect question. To work around, ask a series of questions,
@@ -559,7 +570,19 @@ class CodeBuilderCommands extends DrushCommands {
           $question->setAutocompleterValues($autocomplete_options);
           // Hack to work around the question not allowing an empty answer.
           // See https://github.com/drush-ops/drush/issues/2931
-          $question->setValidator(function ($answer) { return $answer; });
+          $question->setValidator(function ($answer) use ($autocomplete_options) {
+            // Allow an empty answer.
+            if (empty($answer)) {
+              return $answer;
+            }
+
+            // Keep the normal Console error message for an invalid option.
+            if (!in_array(strtolower($answer), array_map('strtolower', $autocomplete_options))) {
+              throw new \Exception("Value \"{$answer}\" is invalid.");
+            }
+
+            return $answer;
+          });
         }
         while (!empty($single_value));
       }
