@@ -321,7 +321,10 @@ class CodeBuilderCommands extends DrushCommands {
    * @param $values
    *  A values array.
    * @param $breadcrumb
-   *  An array of the component names and labels seen so far. TODO.
+   *  An array of the component names and labels forming a trail into the
+   *  component data hierarchy to the current point. This is output each time
+   *  focus moves to a different component (inculding back out to one we've been
+   *  to before) in order to help users keep track of what they are entering.
    *
    * @return
    *  The values array with the user-entered values added to it.
