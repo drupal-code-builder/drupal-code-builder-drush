@@ -517,12 +517,11 @@ class CodeBuilderCommands extends DrushCommands {
         $extra_options = array_keys($property_info['options_extra']);
 
         // TODO: add an explanation that further options may be used.
-        // TODO: slight inconsistency as in this case the labels won't be
-        // available as autocomplete values.
         $autocomplete_options = $extra_options;
       }
       else {
-        $autocomplete_options = $options;
+        // Only the values are available for autocompletion, not the labels.
+        $autocomplete_options = array_keys($options);
       }
 
       if ($property_info['format'] == 'array') {
