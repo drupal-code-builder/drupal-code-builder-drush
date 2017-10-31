@@ -9,11 +9,15 @@ use Drush\Commands\DrushCommands;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\Table;
+use Robo\Contract\ConfigAwareInterface;
+use Robo\Common\ConfigAwareTrait;
 
 /**
  * Provides commands for generating code with the Drupal Code Builder library.
  */
-class CodeBuilderCommands extends DrushCommands {
+class CodeBuilderCommands extends DrushCommands implements ConfigAwareInterface {
+
+  use ConfigAwareTrait;
 
   protected $extensions = [];
 
@@ -143,7 +147,8 @@ class CodeBuilderCommands extends DrushCommands {
     if ($module_name == '.') {
       // If no module name is given, or it's the special value '.', take the
       // current directory to be the module name parameter.
-      $current_directory = drush_cwd();
+      $current_directory = $this->getConfig()->get('env.cwd');
+
       $module_name = basename($current_directory);
 
       // TODO: output a message to say this is what we've done.
@@ -923,7 +928,7 @@ class CodeBuilderCommands extends DrushCommands {
         // An initial . means to start from the current directory rather than
         // the modules folder, which allows submodules to be created where the
         // user is standing.
-        $module_dir = drush_cwd() . '/';
+        $module_dir = $this->getConfig()->get('env.cwd') . '/';
         // Remove both the . and the following /.
         $parent_dir = substr($parent_dir, 2);
         if ($parent_dir) {
