@@ -151,6 +151,8 @@ class CodeBuilderCommands extends DrushCommands implements ConfigAwareInterface 
 
       $module_name = basename($current_directory);
 
+      // TODO: check that this is actually a module?
+
       // Output a message to say this is what we've done.
       $this->io()->text("Working module set to {$module_name}.");
 
