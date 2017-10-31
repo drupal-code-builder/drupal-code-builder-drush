@@ -745,6 +745,11 @@ function module_builder_drush_interactive_collect_properties($mb_task_handler_ge
 
             // Keep going with child items.
             $enter_another = TRUE;
+
+            // If we've reached the cardinality limit, stop.
+            if (isset($property_info['cardinality']) && count($value) == $property_info['cardinality']) {
+              $enter_another = FALSE;
+            }
           }
 
           $delta++;
