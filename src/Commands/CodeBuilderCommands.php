@@ -526,7 +526,7 @@ class CodeBuilderCommands extends DrushCommands implements ConfigAwareInterface 
         // only meant to be labels.
         $extra_options = array_keys($property_info['options_extra']);
 
-        // TODO: add an explanation that further options may be used.
+        // The prompt will show an explanation that further options may be used.
         $autocomplete_options = $extra_options;
       }
       else {
@@ -705,6 +705,13 @@ class CodeBuilderCommands extends DrushCommands implements ConfigAwareInterface 
       $prompt .= "\n";
       // Needs a single character indent, apparently.
       $prompt .= ' <comment>(' . $property_info['description']  . ')</comment>';
+    }
+    if (isset($property_info['options_extra'])) {
+      // TODO: Should go after the options list, rather than before, but not
+      // possible without custom question class probably.
+      $prompt .= "\n";
+      // Needs a single character indent, apparently.
+      $prompt .= ' <comment>(Additional options available in autocompletion.)</comment>';
     }
     return $prompt;
   }
