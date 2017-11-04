@@ -593,6 +593,10 @@ function drush_module_builder_build_component($commands, $component_type, $compo
  *  The values array with the user-entered values added to it.
  */
 function module_builder_drush_interactive_collect_properties($mb_task_handler_generate, $component_data_info, $component_data, $plain_commands, $prefixed_commands, $interactive, $nesting = 0) {
+  // Indent child properties to make the structure clearer.
+  $indent_count = 2 * $nesting;
+  $indent = str_repeat('  ', $nesting);
+
   // Work through the component data info, assembling the component data array
   // Each property info needs to be prepared, so iterate by reference.
   foreach ($component_data_info as $property_name => &$property_info) {
@@ -707,9 +711,8 @@ function module_builder_drush_interactive_collect_properties($mb_task_handler_ge
           $value[$delta] = [];
 
           // Show heading for a nested item.
-          $indent = str_repeat('  ', $nesting);
           $human_delta = $delta + 1;
-          drush_print($indent . "{$property_info['label']}: $human_delta");
+          drush_print("{$property_info['label']}: $human_delta", $indent_count);
 
           // Set up parameters to pass to the recursive call.
           $child_property_info = $property_info['properties'];
@@ -838,6 +841,7 @@ function module_builder_drush_interactive_collect_properties($mb_task_handler_ge
  */
 function module_builder_drush_interactive_prompt($property_name, $property_info, $component_data, $default, $nesting, $first_child) {
   // Indent child properties to make the structure clearer.
+  $indent_count = 2 * $nesting;
   $indent = str_repeat('  ', $nesting);
 
   // Show the user the available options, unless told not to.
@@ -845,19 +849,19 @@ function module_builder_drush_interactive_prompt($property_name, $property_info,
   if (isset($property_info['options']) && empty($property_info['drush_no_option_list'])) {
     $numeric_options = TRUE;
 
-    drush_print("Select from the following options. Enter either option index number or their value.");
+    drush_print("Select from the following options. Enter either option index number or their value.", $indent_count);
 
     $option_by_index = array();
     $i = 1;
     foreach ($property_info['options'] as $option => $label) {
       $option_by_index[$i] = $option;
-      drush_print("[$i] $option: $label", 2);
+      drush_print("[$i] $option: $label", $indent_count);
 
       $i++;
     }
 
     if (!empty($property_info['options_allow_other'])) {
-      drush_print("[...] Values not on this list may also be entered.", 2);
+      drush_print("[...] Values not on this list may also be entered.", $indent_count);
     }
   }
 
