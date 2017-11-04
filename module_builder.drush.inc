@@ -710,8 +710,9 @@ function module_builder_drush_interactive_collect_properties($mb_task_handler_ge
           // into it.
           $value[$delta] = [];
 
-          // Show heading for a nested item.
+          // Show heading for a nested item, with a blank line before it.
           $human_delta = $delta + 1;
+          drush_print();
           drush_print("{$property_info['label']}: $human_delta", $indent_count);
 
           // Set up parameters to pass to the recursive call.
@@ -840,6 +841,9 @@ function module_builder_drush_interactive_collect_properties($mb_task_handler_ge
  *  The value obtained from the user.
  */
 function module_builder_drush_interactive_prompt($property_name, $property_info, $component_data, $default, $nesting, $first_child) {
+  // Start with a blank line to space out the questions.
+  drush_print();
+
   // Indent child properties to make the structure clearer.
   $indent_count = 2 * $nesting;
   $indent = str_repeat('  ', $nesting);
