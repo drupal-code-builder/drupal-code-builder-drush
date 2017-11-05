@@ -715,6 +715,31 @@ function module_builder_drush_interactive_collect_properties(
       if ($property_info['format'] == 'compound') {
         // For compound properties, allow the user to enter as many items as
         // they like, prompting for all the child properties for each item.
+        // First, ask the user whether to enter into the compound property.
+        if ($data_info[$property_name]['required']) {
+          drush_print();
+          drush_print("Enter details for {$property_info['label']} (at least one required)", $indent_count);
+        }
+        else {
+          drush_print();
+          $prompt = "Enter details for {$property_info['label']}?";
+          $enter_compound = drush_prompt($indent . $prompt, 'no', TRUE);
+          if (in_array(strtolower($enter_compound), ['no', 'n'])) {
+            $enter_compound = FALSE;
+          }
+
+          if (!$enter_compound) {
+            // Zap any defaults the prepare step might have put in, so that if
+            // the user has said they don't want anything here, there's
+            // actually nothing here.
+            // (Need to do the same work as the main loop end.)
+            $component_data[$property_name] = [];
+
+            // Move on to the next property.
+            continue;
+          }
+        }
+
         // Entering an empty value for the first child property ends the
         // handling of the compound property.
         $delta = 0;
@@ -941,28 +966,11 @@ function module_builder_drush_interactive_prompt(
   if (empty($property_info['required']) && empty($component_data[$property_name])) {
     $prompt .= ' ' . "(optional)";
   }
-  if ($first_child && $nesting) {
-    // Special handling for a first child in a nested component.
-    // Tell the user how they can exit this nested component loop.
-    // TODO! parent label!
-    $prompt .= ' ' . "(leave blank to finish entering {$property_info['parent_label']})";
-
-    // Kill the default so the user can enter an empty value easily.
-    // (Note that Drush 8 treats NULL and '' differently.)
-    $default = NULL;
-  }
   if (!empty($property_info['description'])) {
     $prompt .= "\n{$indent}({$property_info['description']})";
   }
 
-  // Hack the 'required' property for first child of a nested item, so the user
-  // can enter an empty string and exit the child properties loop.
-  $required = $property_info['required'];
-  if ($first_child && $nesting) {
-    $required = FALSE;
-  }
-
-  $value = drush_prompt($prompt, $default, $required);
+  $value = drush_prompt($prompt, $default, $property_info['required']);
 
   // Split a space-separated list into an array now rather than later, so the
   // numeric options can be converted.
