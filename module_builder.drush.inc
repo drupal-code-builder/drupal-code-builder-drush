@@ -592,10 +592,24 @@ function drush_module_builder_build_component($commands, $component_type, $compo
  * @return
  *  The values array with the user-entered values added to it.
  */
-function module_builder_drush_interactive_collect_properties($mb_task_handler_generate, $component_data_info, $component_data, $plain_commands, $prefixed_commands, $interactive, $nesting = 0) {
+function module_builder_drush_interactive_collect_properties(
+  $mb_task_handler_generate,
+  $component_data_info,
+  $component_data,
+  $plain_commands,
+  $prefixed_commands,
+  $interactive,
+  $nesting = 0,
+  $breadcrumb = []
+) {
   // Indent child properties to make the structure clearer.
   $indent_count = 2 * $nesting;
   $indent = str_repeat('  ', $nesting);
+
+  if (count($breadcrumb)) {
+    module_builder_outputDataBreadcrumb('Current item', $breadcrumb, $indent_count);
+  }
+
 
   // Work through the component data info, assembling the component data array
   // Each property info needs to be prepared, so iterate by reference.
@@ -705,15 +719,24 @@ function module_builder_drush_interactive_collect_properties($mb_task_handler_ge
         // handling of the compound property.
         $delta = 0;
         $child_property_names = array_keys($property_info['properties']);
+
+        // Add the label to the breadcrumb.
+        $nested_breadcrumb = $breadcrumb;
+        $nested_breadcrumb[] = $property_info['label'];
+
         do {
           // Initialize a new child item so a default value can be placed
           // into it.
           $value[$delta] = [];
 
-          // Show heading for a nested item, with a blank line before it.
-          $human_delta = $delta + 1;
-          drush_print();
-          drush_print("{$property_info['label']}: $human_delta", $indent_count);
+          // Add to the breadcrumb to pass into the recursion.
+          $item_breadcrumb = $nested_breadcrumb;
+          // Don't show a delta if the cardinality is 1.
+          if ($property_info['cardinality'] != 1) {
+            // Use human-friendly index.
+            $breadcrumb_delta = $delta + 1;
+            $item_breadcrumb[] = "Item {$breadcrumb_delta}";
+          }
 
           // Set up parameters to pass to the recursive call.
           $child_property_info = $property_info['properties'];
@@ -732,7 +755,8 @@ function module_builder_drush_interactive_collect_properties($mb_task_handler_ge
             $plain_commands,
             $prefixed_commands,
             $interactive,
-            $nesting + 1
+            $nesting + 1,
+            $item_breadcrumb
           );
 
           if ($item_component_data === NULL) {
@@ -770,6 +794,17 @@ function module_builder_drush_interactive_collect_properties($mb_task_handler_ge
           $nesting,
           $first_child
         );
+
+        // For the first property (which should be non-compound), take the
+        // value and put it into the breadcrumb, so further output of the
+        // breadcrumb that includes this level has a name rather than just
+        // 'item DELTA'.
+        if ($first_child) {
+          array_pop($breadcrumb);
+          // TODO: prefix this with the label? But we don't have that at this
+          // point!
+          $breadcrumb[] = $value;
+        }
 
         // If this is the first property of a component, and it got a NULL
         // value, then this means we should bail on the entire current
@@ -814,6 +849,16 @@ function module_builder_drush_interactive_collect_properties($mb_task_handler_ge
   }
 
   return $component_data;
+}
+
+function module_builder_outputDataBreadcrumb($label, $breadcrumb, $indent_count) {
+  $breadcrumb_string = implode(' » ', $breadcrumb);
+
+  drush_print();
+  // Print the breadcrumb in cyan text.
+  // This matches the 9.x version where it's that colour to differentiate it
+  // from the colours used by Symfony Console.
+  drush_print("\033[36m" . "$label: $breadcrumb_string" . "\033[39m", $indent_count);
 }
 
 /**
