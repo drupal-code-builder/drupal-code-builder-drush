@@ -771,12 +771,10 @@ function module_builder_drush_interactive_collect_properties(
             $property['parent_label'] = $property_info['label'];
           }
 
-          // TODO; fix pass in of component_data.
-          $child_component_data = [];
           $item_component_data = module_builder_drush_interactive_collect_properties(
             $mb_task_handler_generate,
             $child_property_info,
-            $child_component_data,
+            $component_data[$property_name][$delta],
             $plain_commands,
             $prefixed_commands,
             $interactive,
