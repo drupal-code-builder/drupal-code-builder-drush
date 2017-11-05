@@ -885,7 +885,14 @@ function module_builder_outputDataBreadcrumb($label, $breadcrumb, $indent_count)
  * @return
  *  The value obtained from the user.
  */
-function module_builder_drush_interactive_prompt($property_name, $property_info, $component_data, $default, $nesting, $first_child) {
+function module_builder_drush_interactive_prompt(
+  $property_name,
+  $property_info,
+  $component_data,
+  $default,
+  $nesting,
+  $first_child
+) {
   // Start with a blank line to space out the questions.
   drush_print();
 
