@@ -782,28 +782,28 @@ function module_builder_drush_interactive_collect_properties(
             $item_breadcrumb
           );
 
-          if ($item_component_data === NULL) {
-            // Remove the child item we created for this delta, as nothing's
-            // been put in it.
-            unset($value[$delta]);
+          // Store the value.
+          $value[$delta] = $item_component_data;
 
-            // This tells the while loop for child items to end.
-            $enter_another = FALSE;
-          }
-          else {
-            // Store the value.
-            $value[$delta] = $item_component_data;
+          // Increase the delta for the next loop and the cardinality check.
+          $delta++;
 
-            // Keep going with child items.
-            $enter_another = TRUE;
+          if ($delta != $property_info['cardinality']) {
+            $prompt = "Enter more {$property_info['label']}?";
 
-            // If we've reached the cardinality limit, stop.
-            if (isset($property_info['cardinality']) && count($value) == $property_info['cardinality']) {
+            drush_print();
+            $enter_another = drush_prompt($indent . $prompt, 'no', TRUE);
+            if (in_array(strtolower($enter_another), ['no', 'n'])) {
               $enter_another = FALSE;
             }
+            else {
+              $enter_another = TRUE;
+            }
           }
-
-          $delta++;
+          else {
+            // Reached maximum cardinality: loop must end.
+            $enter_another = FALSE;
+          }
         }
         while ($enter_another == TRUE);
       }
@@ -827,13 +827,6 @@ function module_builder_drush_interactive_collect_properties(
           // TODO: prefix this with the label? But we don't have that at this
           // point!
           $breadcrumb[] = $value;
-        }
-
-        // If this is the first property of a component, and it got a NULL
-        // value, then this means we should bail on the entire current
-        // component, and terminate entering the child property we are within.
-        if ($first_child && $value === NULL) {
-          return NULL;
         }
       }
     } // End interactive.
