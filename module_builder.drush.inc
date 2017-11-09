@@ -330,6 +330,10 @@ function drush_module_builder_callback_build_module() {
     elseif (drush_get_option(array('write', 'go'))) {
       $build = 'all';
     }
+    // In interactive mode, build everything.
+    elseif (module_builder_determine_interactive_mode()) {
+      $build = 'all';
+    }
     // Otherwise, outputting to terminal: only module
     else {
       $build = 'code';
