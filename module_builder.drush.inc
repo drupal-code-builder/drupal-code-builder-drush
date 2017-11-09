@@ -956,7 +956,7 @@ function module_builder_drush_interactive_prompt(
       $prompt .= "Do you want a {$property_info['label']}";
       $prompt .= ' ' . "(y/n)";
       // Set the default.
-      $default .= empty($default) ? 'n' : 'y';
+      $default = empty($default) ? 'n' : 'y';
       break;
     case 'string':
       $prompt .= "Enter the {$property_info['label']}";
