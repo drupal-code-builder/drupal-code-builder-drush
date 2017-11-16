@@ -1132,7 +1132,7 @@ class CodeBuilderCommands extends DrushCommands implements ConfigAwareInterface 
         $message = "The component data directory could not be created or is not writable.";
         break;
       case 'component_data_processed':
-        $message = "No component data was found. Run 'drush cb-download' to process component data from your site's code files.";
+        $message = "No component data was found. Run 'drush cb:update' to process component data from your site's code files.";
         break;
     }
     throw new \Exception($message);
