@@ -27,11 +27,11 @@ Builder.
 
 The following commands are available:
 
-- `drush cb-list`: Lists all the hooks, services, and plugins that Drupal Code
+- `drush cb:list`: Lists all the hooks, services, and plugins that Drupal Code
   Builder has detected in your Drupal site's codebase.
-- `drush cb-update`: Updates the stored definitions of Drupal hooks, services
+- `drush cb:update`: Updates the stored definitions of Drupal hooks, services
   and plugin types.
-- `drush cb-module`: Creates a module, or adds components to one.
+- `drush cb:module`: Creates a module, or adds components to one.
 
 ## A note on history
 
