@@ -535,6 +535,10 @@ class CodeBuilderCommands extends DrushCommands implements ConfigAwareInterface 
       }
 
       if ($property_info['format'] == 'array') {
+        if (!is_array($default)) {
+          $default = [$default];
+        }
+
         // Multi-valued property.
         // TODO: consider adding the explanation message on its own line first --
         // but need to work out how to format it, in the face of nonexistent
@@ -544,7 +548,8 @@ class CodeBuilderCommands extends DrushCommands implements ConfigAwareInterface 
         $question = new \Symfony\Component\Console\Question\ChoiceQuestion(
           $this->getQuestionPromptForProperty("Enter the @label, one per line, empty line to finish", $property_info),
           $options,
-          $default
+          // Feed the default values one by one.
+          array_shift($default)
         );
         $question->setAutocompleterValues($autocomplete_options);
         // Hack to work around the question not allowing an empty answer.
@@ -576,7 +581,7 @@ class CodeBuilderCommands extends DrushCommands implements ConfigAwareInterface 
           // For subsequent iterations, the question should not show options.
           $question = new \Symfony\Component\Console\Question\Question(
             $this->getQuestionPromptForProperty("Enter further @label, one per line, empty line to finish", $property_info),
-            $default
+            array_shift($default)
           );
           $question->setAutocompleterValues($autocomplete_options);
           // Hack to work around the question not allowing an empty answer.
