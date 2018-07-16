@@ -95,7 +95,7 @@ class CodeBuilderCommands extends DrushCommands implements ConfigAwareInterface 
    *    interactive prompt.
    * @usage drush cb:module my_module module
    *    Build the basic module 'my_module'.
-   * @usage drush cb:update my_module plugins
+   * @usage drush cb:module my_module plugins
    *    Add plugins to the module 'my_module'. If the module doesn't exist, it
    *    will be created.
    * @bootstrap DRUSH_BOOTSTRAP_DRUPAL_FULL
