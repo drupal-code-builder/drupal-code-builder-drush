@@ -305,8 +305,9 @@ class CodeBuilderCommands extends DrushCommands implements ConfigAwareInterface 
     // a simple property that then produces the Hooks component.
     $return[] = 'hooks';
 
+    dump($component_data_info);
     foreach ($component_data_info as $property_name => $property_info) {
-      if (isset($property_info['component'])) {
+      if (isset($property_info['component_type'])) {
         $return[] = $property_name;
       }
     }
