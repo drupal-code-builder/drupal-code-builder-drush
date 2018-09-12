@@ -1,6 +1,6 @@
 <?php
 
-namespace Drush\Commands;
+namespace Drush\Commands\code_builder_commands;
 
 use Consolidation\AnnotatedCommand\AnnotationData;
 use Consolidation\AnnotatedCommand\CommandData;
