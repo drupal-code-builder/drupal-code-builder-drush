@@ -3,7 +3,12 @@
   "description": "Provides Drush commands for generating Drupal code using Drupal Code Builder.",
   "type": "drupal-drush",
   "extra": {
-    "installer-name": "code_builder_commands"
+    "installer-name": "code_builder_commands",
+    "drush": {
+      "services": {
+        "drush.services.yml": "^9"
+      }
+    }
   },
   "license": "GPL-2.0+",
   "require": {
@@ -14,7 +19,7 @@
   },
   "autoload": {
     "psr-4": {
-      "Drush\\Commands\\": "src/Commands"
+      "Drush\\Commands\\code_builder_commands\\": ""
     },
     "classmap": [
       "CodeBuilderDevCommands.php"
