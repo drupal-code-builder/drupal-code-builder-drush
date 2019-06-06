@@ -20,9 +20,6 @@
   "autoload": {
     "psr-4": {
       "Drush\\Commands\\code_builder_commands\\": ""
-    },
-    "classmap": [
-      "CodeBuilderDevCommands.php"
-    ]
+    }
   }
 }
