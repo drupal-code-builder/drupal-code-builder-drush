@@ -12,7 +12,7 @@
   },
   "license": "GPL-2.0+",
   "require": {
-    "drupal-code-builder/drupal-code-builder": "^3.2.0"
+    "drupal-code-builder/drupal-code-builder": "^4.2.0"
   },
   "require-dev": {
     "symfony/var-dumper": "^3.2"
