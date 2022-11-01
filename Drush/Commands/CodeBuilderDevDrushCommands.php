@@ -1,6 +1,6 @@
 <?php
 
-namespace Drush\Commands\code_builder_commands;
+namespace DrupalCodeBuilderDrush\Drush\Commands;
 
 use Consolidation\AnnotatedCommand\AnnotationData;
 use Consolidation\AnnotatedCommand\CommandData;
@@ -12,7 +12,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Provides developer commands for the Drupal Code Builder library.
  */
-class CodeBuilderDevCommands extends DrushCommands {
+class CodeBuilderDevDrushCommands extends DrushCommands {
 
   /**
    * Updates Drupal component definitions stored as sample data for testing.

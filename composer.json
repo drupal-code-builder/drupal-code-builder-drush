@@ -12,6 +12,7 @@
   },
   "license": "GPL-2.0+",
   "require": {
+    "drush/drush": "^10.5 || ^11",
     "drupal-code-builder/drupal-code-builder": "^4.2.0"
   },
   "require-dev": {
@@ -19,7 +20,7 @@
   },
   "autoload": {
     "psr-4": {
-      "Drush\\Commands\\code_builder_commands\\": ""
+      "DrupalCodeBuilderDrush\\": ""
     }
   }
 }

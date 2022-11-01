@@ -1,6 +1,6 @@
 <?php
 
-namespace Drush\Commands\code_builder_commands;
+namespace DrupalCodeBuilderDrush\Drush\Commands;
 
 use Consolidation\AnnotatedCommand\AnnotationData;
 use Consolidation\AnnotatedCommand\CommandData;
@@ -15,7 +15,7 @@ use Robo\Common\ConfigAwareTrait;
 /**
  * Provides commands for generating code with the Drupal Code Builder library.
  */
-class CodeBuilderCommands extends DrushCommands implements ConfigAwareInterface {
+class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInterface {
 
   use ConfigAwareTrait;
 
