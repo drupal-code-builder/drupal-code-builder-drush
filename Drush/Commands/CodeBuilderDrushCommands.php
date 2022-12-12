@@ -7,6 +7,7 @@ use Consolidation\AnnotatedCommand\CommandData;
 use Consolidation\AnnotatedCommand\CommandError;
 use DrupalCodeBuilderDrush\Environment\DrushModuleBuilderDevel;
 use Drush\Commands\DrushCommands;
+use MutableTypedData\Data\DataItem;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\Table;
@@ -185,10 +186,9 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
     catch (\DrupalCodeBuilder\Exception\SanityException $e) {
       $this->handleSanityException($e);
     }
-    $component_data_info = $task_handler_generate->getRootComponentDataInfo();
 
-    // Remove hook presets, barely relevant in Drupal 8.
-    unset($component_data_info['module_hook_presets']);
+    /** @var \MutableTypedData\Data\DataItem */
+    $component_data = $task_handler_generate->getRootComponentData();
 
     // Initialize an array of values.
     $build_values = [];
@@ -208,7 +208,7 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
     $module_name = $input->getArgument('module_name');
     $module_exists = $this->moduleExists($module_name);
 
-    $subcomponent_property_names = $this->getSubComponentPropertyNames($component_data_info);
+    $subcomponent_property_names = $this->getSubComponentPropertyNames($component_data);
 
     // Get the component type if not provided.
     if (empty($input->getArgument('component_type'))) {
@@ -222,7 +222,7 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
 
       foreach ($subcomponent_property_names as $property_name) {
         // TODO: some of these labels are plurals! Should they be?
-        $options[$property_name] = $component_data_info[$property_name]['label'];
+        $options[$property_name] = $component_data->{$property_name}->getLabel();
       }
 
       if ($module_exists) {
@@ -300,24 +300,17 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
   }
 
   /**
-   * Filters a data info array to get subcomponents.
+   * Filters a data array to get subcomponents.
    *
-   * @param $component_data_info
-   *  A data info array.
+   * @param $component_data
+   *  The component data.
    *
    * @return
    *  An array of the property names which are subcomponents.
    */
-  protected function getSubComponentPropertyNames($component_data_info) {
-    // Get the properties of a component which are themselves components.
-    $return = [];
-
-    // Cheat and for now consider hooks a subcomponent, even though they're
-    // a simple property that then produces the Hooks component.
-    $return[] = 'hooks';
-
-    foreach ($component_data_info as $property_name => $property_info) {
-      if (isset($property_info['component_type'])) {
+  protected function getSubComponentPropertyNames(DataItem $component_data) {
+    foreach ($component_data as $property_name => $property_data) {
+      if ($property_data->isComplex()) {
         $return[] = $property_name;
       }
     }
