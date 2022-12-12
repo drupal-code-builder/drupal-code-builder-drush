@@ -5,6 +5,7 @@ namespace DrupalCodeBuilderDrush\Drush\Commands;
 use Consolidation\AnnotatedCommand\AnnotationData;
 use Consolidation\AnnotatedCommand\CommandData;
 use Consolidation\AnnotatedCommand\CommandError;
+use DrupalCodeBuilderDrush\Environment\DrushModuleBuilderDevel;
 use Drush\Commands\DrushCommands;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -39,8 +40,18 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
     }
 
     // Set up the DCB factory.
-    \DrupalCodeBuilder\Factory::setEnvironmentLocalClass('Drush')
-      ->setCoreVersionNumber(drush_drupal_version());
+    // Ensure compatibility with module_builder_devel, which if enabled uses a
+    // differnet format for the stored analysis data.
+    if (\Drupal::moduleHandler()->moduleExists('module_builder_devel')) {
+      $environment = new DrushModuleBuilderDevel();
+
+      \DrupalCodeBuilder\Factory::setEnvironment($environment)
+        ->setCoreVersionNumber(drush_drupal_version());
+    }
+    else {
+      \DrupalCodeBuilder\Factory::setEnvironmentLocalClass('Drush')
+        ->setCoreVersionNumber(drush_drupal_version());
+    }
   }
 
   /**
