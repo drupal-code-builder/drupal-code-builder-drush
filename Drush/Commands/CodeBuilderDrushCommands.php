@@ -7,6 +7,7 @@ use Consolidation\AnnotatedCommand\CommandData;
 use Consolidation\AnnotatedCommand\CommandError;
 use DrupalCodeBuilderDrush\Environment\DrushModuleBuilderDevel;
 use Drush\Commands\DrushCommands;
+use Drush\Drush;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\Table;
@@ -39,6 +40,9 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
       throw new \Exception(dt("Can't find the Drupal Code Builder library. This needs to be installed with composer."));
     }
 
+    $drupal_root = Drush::bootstrapManager()->getRoot();
+    $drupal_version = Drush::bootstrap()->getVersion($drupal_root);
+
     // Set up the DCB factory.
     // Ensure compatibility with module_builder_devel, which if enabled uses a
     // differnet format for the stored analysis data.
@@ -46,11 +50,11 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
       $environment = new DrushModuleBuilderDevel();
 
       \DrupalCodeBuilder\Factory::setEnvironment($environment)
-        ->setCoreVersionNumber(drush_drupal_version());
+        ->setCoreVersionNumber($drupal_version);
     }
     else {
       \DrupalCodeBuilder\Factory::setEnvironmentLocalClass('Drush')
-        ->setCoreVersionNumber(drush_drupal_version());
+        ->setCoreVersionNumber($drupal_version);
     }
   }
 
