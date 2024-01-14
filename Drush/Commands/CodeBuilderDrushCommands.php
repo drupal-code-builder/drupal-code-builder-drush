@@ -36,11 +36,6 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
    * @hook post-init @code_builder
    */
   public function initializeLibrary() {
-    // Check our library is present.
-    if (!class_exists(\DrupalCodeBuilder\Factory::class)) {
-      throw new \Exception(dt("Can't find the Drupal Code Builder library. This needs to be installed with composer."));
-    }
-
     $drupal_root = Drush::bootstrapManager()->getRoot();
     $drupal_version = Drush::bootstrap()->getVersion($drupal_root);
 
