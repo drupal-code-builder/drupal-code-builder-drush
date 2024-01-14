@@ -36,7 +36,15 @@ class CodeBuilderDevDrushCommands extends DrushCommands {
 
     $task_handler_collect = \DrupalCodeBuilder\Factory::getTask('Testing\CollectTesting');
 
-    $task_handler_collect->collectComponentData();
+    $job_list = $task_handler_collect->getJobList();
+
+    $results = [];
+    $this->io()->progressStart(count($job_list));
+    foreach ($job_list as $job) {
+      $task_handler_collect->collectComponentDataIncremental([$job], $results);
+      $this->io()->progressAdvance(1);
+    }
+    $this->io()->progressFinish();
 
     $hooks_directory = \DrupalCodeBuilder\Factory::getEnvironment()->getHooksDirectory();
 
