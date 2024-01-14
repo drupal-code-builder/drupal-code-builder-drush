@@ -6,6 +6,7 @@ use Consolidation\AnnotatedCommand\AnnotationData;
 use Consolidation\AnnotatedCommand\CommandData;
 use Consolidation\AnnotatedCommand\CommandError;
 use Drush\Commands\DrushCommands;
+use Drush\Drush;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -27,8 +28,11 @@ class CodeBuilderDevDrushCommands extends DrushCommands {
    * @code_builder
    */
   public function commandUpdateDefinitions(OutputInterface $output) {
+    $drupal_root = Drush::bootstrapManager()->getRoot();
+    $drupal_version = Drush::bootstrap()->getVersion($drupal_root);
+
     \DrupalCodeBuilder\Factory::setEnvironmentLocalClass('WriteTestsSampleLocation')
-      ->setCoreVersionNumber(drush_drupal_version());
+      ->setCoreVersionNumber($drupal_version);
 
     $task_handler_collect = \DrupalCodeBuilder\Factory::getTask('Testing\CollectTesting');
 
