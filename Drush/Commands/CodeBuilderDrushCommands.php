@@ -921,17 +921,10 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
    *  The full system path for the component's folder, without a trailing slash.
    */
   protected function getComponentFolder($component_type, $component_name, $parent_dir) {
-    $drupal_root = drush_get_context('DRUSH_DRUPAL_ROOT');
+    $drupal_root = Drush::bootstrapManager()->getRoot();
 
     // First try: if the component exists, we write there: nice and simple.
-    // In Drupal 8, drupal_get_filename() triggers an error for a component that
-    // doesn't exist, so bypass that with a dummy error handler.
-    // TODO! Fix this hack!
-    set_error_handler(function() {}, E_USER_WARNING);
-
-    $component_path = @drupal_get_path($component_type, $component_name);
-
-    restore_error_handler();
+    $component_path = $this->getExistingExtensionPath('module', $component_name);
 
     if (!empty($component_path)) {
       return $drupal_root . '/' . $component_path;
@@ -975,6 +968,27 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
     foreach ($possible_folders as $folder) {
       if (is_dir($drupal_root . $folder)) {
         return $drupal_root . $folder . '/' . $component_name;
+      }
+    }
+  }
+
+  /**
+   * Returns the path to the module if it has previously been written.
+   *
+   * @return
+   *  A Drupal-relative path to the module folder, or NULL if the module
+   *  does not already exist.
+   */
+  protected function getExistingExtensionPath(string $component_type, string $extension_name): ?string {
+    $registered_in_drupal = \Drupal::service('extension.list.' . $component_type)->exists($extension_name);
+    if ($registered_in_drupal) {
+      $extension = \Drupal::service('extension.list.' . $component_type)->get($extension_name);
+
+      // The user may have deleted the module entirely, and in this situation
+      // Drupal's extension system would still have told us it exists.
+      $really_exists = file_exists($extension->getPath());
+      if ($really_exists) {
+        return $extension->getPath();
       }
     }
   }
