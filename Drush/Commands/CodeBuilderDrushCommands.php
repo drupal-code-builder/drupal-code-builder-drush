@@ -1013,7 +1013,15 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
     // exception.
     $task_handler_collect = $this->getCodeBuilderTask('Collect');
 
-    $result = $task_handler_collect->collectComponentData();
+    $job_list = $task_handler_collect->getJobList();
+
+    $results = [];
+    $this->io()->progressStart(count($job_list));
+    foreach ($job_list as $job) {
+      $task_handler_collect->collectComponentDataIncremental([$job], $results);
+      $this->io()->progressAdvance(1);
+    }
+    $this->io()->progressFinish();
 
     $hooks_directory = \DrupalCodeBuilder\Factory::getEnvironment()->getHooksDirectory();
 
@@ -1021,7 +1029,7 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
 
     $table = new Table($output);
     $table->setHeaders(array('Type', 'Count'));
-    foreach ($result as $label => $count) {
+    foreach ($results as $label => $count) {
       $rows[] = [ucfirst($label), $count];
     }
     $table->setRows($rows);
