@@ -841,12 +841,7 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
    *  Whether this is a dry run, i.e. files should not be written.
    */
   protected function outputComponentFiles(OutputInterface $output, $component_dir, $files, $dry_run) {
-    $quiet = drush_get_context('DRUSH_QUIET');
-
-    // Determine whether to output to terminal.
-    $output_to_terminal = !$quiet;
-
-    if ($output_to_terminal) {
+    if (!$output->isQuiet()) {
       foreach ($files as $filename => $code) {
         // TODO: styling!
         $output->writeln("Proposed $filename:");
@@ -886,7 +881,7 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
       $subdir = dirname($filepath);
       if (!is_dir($subdir)) {
         $result = mkdir($subdir, 0777, TRUE);
-        if ($result && !$quiet) {
+        if ($result && !$output->isQuiet()) {
           if ($subdir == $component_dir) {
             $output->writeln("Module directory $component_dir created");
           }
