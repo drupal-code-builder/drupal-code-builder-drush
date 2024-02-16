@@ -1188,6 +1188,8 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
         return $extension->getPath();
       }
     }
+
+    return NULL;
   }
 
   /**
