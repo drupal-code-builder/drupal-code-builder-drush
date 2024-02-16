@@ -5,6 +5,8 @@ namespace DrupalCodeBuilderDrush\Drush\Commands;
 use Consolidation\AnnotatedCommand\AnnotationData;
 use Consolidation\AnnotatedCommand\CommandData;
 use Consolidation\AnnotatedCommand\CommandError;
+use DrupalCodeBuilder\Definition\DeferredGeneratorDefinition;
+use DrupalCodeBuilder\Definition\MergingGeneratorDefinition;
 use DrupalCodeBuilderDrush\Environment\DrushModuleBuilderDevel;
 use Drush\Commands\DrushCommands;
 use Drush\Drush;
@@ -14,6 +16,12 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\Table;
 use Robo\Contract\ConfigAwareInterface;
 use Robo\Common\ConfigAwareTrait;
+use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\multiselect;
+use function Laravel\Prompts\multisearch;
+use function Laravel\Prompts\text;
+use function Laravel\Prompts\search;
+use function Laravel\Prompts\select;
 
 /**
  * Provides commands for generating code with the Drupal Code Builder library.
@@ -141,8 +149,7 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
     $existing_module_files = $this->getModuleFiles($module_name);
 
     /** @var \MutableTypedData\Data\DataItem */
-    $component_data = $task_handler_generate->getRootComponentData();
-    $component_data->import($this->buildValues);
+    $component_data = $this->componentData;
 
     $files = $task_handler_generate->generateComponent($component_data, $existing_module_files);
     //dump($files);
@@ -234,19 +241,12 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
         $prompt = dt("This module doesn't exist. Choose component types to start it with");
       }
 
-      // Use numerical keys in the options given to the user, same as
-      // DrushStyle::choice().
-      $option_values = array_values($options);
-
-      $question = new \Symfony\Component\Console\Question\ChoiceQuestion(
-        $prompt,
-        $option_values
+      $component_types = multiselect(
+        label: $prompt,
+        options: $options,
+        // Show the lot.
+        scroll: count($options),
       );
-      $question->setMultiselect(TRUE);
-
-      $component_types_values = $this->io()->askQuestion($question);
-      $component_types = array_intersect($options, $component_types_values);
-      $component_types = array_keys($component_types);
 
       // Set any old value on the $component_type command parameter, so the
       // command thinks that it's now set.
@@ -260,22 +260,22 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
 
     // TODO: validate module if supplied
 
-    // Initialize component data with the base type and root name.
-    $build_values = [];
-    $build_values['base'] = 'module';
-    $build_values['root_name'] = $module_name;
+    // TODO Initialize component data with the base type and root name.
+    $component_data->root_name = $module_name;
 
     // Mark the properties we don't want to prompt for.
     $properties_to_skip = [];
     if ($component_types === ['module']) {
       // Don't prompt for any of the subcomponents.
       $properties_to_skip = $subcomponent_property_names;
+
+      // TODO -- whole different pathway, just collect the non-complex.
     }
     else {
       if ($module_exists) {
         // Don't prompt for anything that is *not* a subcomponent, as we won't
         // be building the basic module.
-        $properties_to_skip = array_diff(array_keys($component_data_info), $subcomponent_property_names);;
+        $properties_to_skip = array_diff($component_data->getPropertyNames(), $subcomponent_property_names);;
       }
 
       // Mark the subcomponents that weren't selected.
@@ -284,26 +284,32 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
     // Skip the root_name, since we have already got it.
     $properties_to_skip[] = 'root_name';
 
+    // Set things to internal so the use is not prompted for them.
+    $component_data->root_name->setInternal(TRUE);
+
     foreach ($properties_to_skip as $property_name) {
-      $component_data_info[$property_name]['skip'] = TRUE;
+      $component_data->{$property_name}->setInternal(TRUE);
+
+      // ARRGH babysit the annoying MTD bug with single-valued complex data
+      // getting instantiated once you look at it!
+      $component_data->removeItem($property_name);
     }
 
-    // Collect data for the properties.
-    $breadcrumb = [
-      'module' => $build_values['root_name'],
-    ];
-    $build_values = $this->interactCollectProperties($task_handler_generate, $output, $component_data_info, $build_values, $breadcrumb);
+    // Collect data for the requested components.
+    $breadcrumb = [];
+    $this->interactCollectProperties($component_data, $breadcrumb);
 
-    // Set the values on this class, so the comand callback can get them.
+    // Set the data on this class, so the comand callback can get them.
     // TODO: This is a hack because it's not possible to define dynamic
     // arguments.
     // See https://github.com/consolidation/annotated-command/issues/115
     // TODO: The above TODO is ancient -- see if it's still relevant.
+    $this->componentData = $component_data;
     $this->buildValues = $build_values;
   }
 
   /**
-   * Filters a data array to get subcomponents.
+   * Gets the properties from a data item which we count as subcomponents.
    *
    * @param $component_data
    *  The component data.
@@ -315,36 +321,230 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
     foreach ($component_data as $property_name => $property_data) {
       if ($property_data->isComplex()) {
         $return[] = $property_name;
+        continue;
+      }
+      // Bit of a hack: non-complex properties that request generators.
+      if (in_array(get_class($property_data->getDefinition()), [MergingGeneratorDefinition::class, DeferredGeneratorDefinition::class])) {
+        $return[] = $property_name;
+        continue;
       }
     }
+
+    // Total hack: hooks.
+    // TODO: This won't work when we support other root component types!
+    $return[] = 'hooks';
 
     return $return;
   }
 
   /**
-   * Interactively collects values for a data properties info array.
+   * Interactively collects values for a data item.
    *
-   * This recurses into itself for compound properties.
+   * This recurses into itself for complex properties.
    *
-   * @param $task_handler_generate
-   *  The generate task handler.
-   * @param $output
-   *  The Symfony output handler.
-   * @param &$data_info
-   *  A data info array about properties to collect. This should not have been
-   *  passed to prepareComponentDataProperty() already.
-   * @param $values
-   *  A values array.
+   * @param DataItem $data
+   *  THe data item.
    * @param $breadcrumb
-   *  An array of the component names and labels forming a trail into the
-   *  component data hierarchy to the current point. This is output each time
-   *  focus moves to a different component (inculding back out to one we've been
-   *  to before) in order to help users keep track of what they are entering.
+   *  An array of the component labels forming a trail into the component data
+   *  hierarchy to the current point. This is output each time focus moves to a
+   *  different component (inculding back out to one we've been to before) in
+   *  order to help users keep track of what they are entering.
    *
    * @return
    *  The values array with the user-entered values added to it.
    */
-  protected function interactCollectProperties($task_handler_generate, $output, &$data_info, $values, $breadcrumb) {
+  protected function interactCollectProperties(DataItem $data, $breadcrumb): void {
+    $address = $data->getAddress();
+    $level = substr_count($address, ':');
+    $breadcrumb[] = $data->getLabel();
+
+    // Show breadcrumb, but not on the first level.
+    // This helps to give the user an overview of where they are in the data.
+    if ($level > 1) {
+      $this->outputDataBreadcrumb('Current item', $breadcrumb);
+    }
+
+    if ($data->isComplex()) {
+      // At the top-level, we know the user requested this because of the
+      // initial component selection.
+      if ($level > 1) {
+        $enter_complex = confirm(
+          label: "Enter details for {$data->getLabel()}?",
+          default: FALSE,
+        );
+        if (!$enter_complex) {
+          return;
+        }
+      }
+
+      if ($data->isMultiple()) {
+        // Multi-valued complex data.
+        $delta = 0;
+        do {
+          $delta_item = $data->createItem();
+
+          // Add to the breadcrumb to pass into the recursion.
+          $delta_breadcrumb = $breadcrumb;
+          // Use human-friendly index.
+          $breadcrumb_index = $delta + 1;
+          $delta_breadcrumb[] = "Item {$breadcrumb_index}";
+
+          foreach ($delta_item as $data_item) {
+            $this->interactCollectProperties($data_item, $delta_breadcrumb);
+          }
+
+          // Increase the delta for the next loop and the cardinality check.
+          // (TODO: Cardinality check but probably YAGNI.)
+          $delta++;
+
+          $enter_another = confirm(
+            label: dt("Enter more {$data->getLabel()} items?"),
+            default: FALSE,
+          );
+        }
+        while ($enter_another == TRUE);
+      }
+      else {
+        // Single-valued complex data.
+        foreach ($data as $data_item) {
+          $this->interactCollectProperties($data_item, $breadcrumb);
+        }
+      }
+    }
+    else {
+      // Simple data.
+      if ($data->getType() == 'boolean') {
+        // Boolean.
+        $data->applyDefault();
+
+        $value = confirm(
+          label: dt("Add a {$data->getLabel()}?"),
+          // TODO: setting this to $data->isRequired() is weird -- are some
+          // booleans set to required when FALSE is an OK answer?
+          required: FALSE,
+          default: $data->value,
+        );
+
+        $data->set($value);
+      }
+      elseif ($data->hasOptions()) {
+        // Options, either single or multiple.
+        if (count($data->getOptions()) > 20) {
+          // Large option set.
+          $options_callback = function (string $value) use ($data) {
+            $options = $data->getOptions();
+            $option_keys = array_keys($options);
+
+            // Escape regex characters and the delimiters.
+            $pattern = preg_quote($value, '@');
+            // Match case-insensitively, to make it easier to work with event name
+            // constants.
+            $regex = '@' . $pattern . '@i';
+            // Allow the '_' and '.' characters to be used interchangeably.
+            // The '_' MUST go first in the $search array, as if '\.' goes first, then
+            // the underscores in the $replace string will get found in the second
+            // pass.
+            $regex = str_replace(['_', '\.'], '[._]', $regex);
+            $matched_keys = preg_grep($regex, $option_keys);
+
+            $results = [];
+            if (!$data->isRequired()) {
+              // Can't be an empty string, WTF.
+              $results[' '] = '-- None --';
+            }
+            foreach ($matched_keys as $key) {
+              $results[$key] = $key . ' - ' . $options[$key]->getLabel();
+            }
+
+            return $results;
+          };
+
+          if ($data->isMultiple()) {
+            $value = multisearch(
+              label: 'Enter the ' . $data->getLabel(),
+              options: $options_callback,
+              required: $data->isRequired(),
+            );
+
+            $data->set($value);
+          }
+          else {
+            $value = search(
+              label: 'Enter the ' . $data->getLabel(),
+              options: $options_callback,
+            );
+
+            // Babysit stupid empty value.
+            if ($value != ' ') {
+              $data->set($value);
+            }
+          }
+        }
+        else {
+          // Small option set.
+          $options = [];
+
+          // Have to babysit single-option non-required :(
+          if (!$data->isMultiple() && !$data->isRequired()) {
+            $options[''] = 'None';
+          }
+
+          foreach ($data->getOptions() as $value => $option) {
+            $options[$value] = $option->getLabel();
+          }
+
+          if ($data->isMultiple()) {
+            $value = multiselect(
+              label: 'Enter the ' . $data->getLabel(),
+              options: $options,
+              required: $data->isRequired(),
+            );
+
+            $data->set($value);
+          }
+          else {
+            $value = select(
+              label: 'Enter the ' . $data->getLabel(),
+              options: $options,
+            );
+          }
+
+          $data->set($value);
+        }
+      }
+      else {
+        // Text value.
+        if ($data->isMultiple()) {
+          $value = text(
+            label: "Enter the {$data->getLabel()} as a comma-separated list of values",
+            required: $data->isRequired(),
+          );
+
+          // TODO: trim!
+          $value = explode(',', $value);
+
+          $data->set($value);
+        }
+        else {
+          $data->applyDefault();
+
+          $value = text(
+            label: "Enter the {$data->getLabel()}",
+            required: $data->isRequired(),
+            default: $data->value ?? '',
+          );
+
+          if (!empty($value)) {
+            $data->set($value);
+          }
+        }
+      }
+    }
+
+    return;
+
+    // TODO: mine old code for things I've not converted yet!
+
     // Show breadcrumb, but not on the first level.
     // This helps to give the user an overview of where they are in the data.
     if (count($breadcrumb) > 1) {
@@ -422,8 +622,7 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
           $value[$delta] = $this->interactCollectProperties(
             $task_handler_generate,
             $output,
-            $data_info[$property_name]['properties'],
-            $value[$delta],
+            $data_info->{$property_name},
             $item_breadcrumb
           );
 
@@ -478,23 +677,19 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
         }
       }
     }
-
-    return $values;
   }
 
   /**
    * Output a breadcrumb, showing where the user is in the data structure.
    *
-   * @param $output
-   *   The output handler.
    * @param string $label
    *   A label describing the breadcrumb.
    * @param string[] $breadcrumb
    *   An array of strings representing the current position.
    */
-  protected function outputDataBreadcrumb($output, $label, $breadcrumb) {
+  protected function outputDataBreadcrumb($label, $breadcrumb) {
     $breadcrumb_string = implode(' » ', $breadcrumb);
-    $output->writeln("<fg=cyan>$label: $breadcrumb_string</>" . "\n");
+    $this->io()->writeln("<fg=cyan>$label: $breadcrumb_string</>" . "\n");
   }
 
   /**
@@ -763,12 +958,14 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
    *   TRUE if the module exists (enabled or not). FALSE if it does not.
    */
   protected function moduleExists($module_name) {
-    $module_files = $this->getModuleList();
-    return isset($module_files[$module_name]);
+    $extensions = $this->getModules();
+    return isset($extensions[$module_name]);
   }
 
   /**
    * Returns a list of all modules in the current site, enabled or not.
+   *
+   * TODO: broken!
    *
    * @return string[]
    *   An array whose keys are module names and whose values are the relative

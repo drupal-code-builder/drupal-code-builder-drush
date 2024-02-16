@@ -12,7 +12,8 @@
   "license": "GPL-2.0+",
   "require": {
     "drush/drush": "^10.5 || ^11 || ^12",
-    "drupal-code-builder/drupal-code-builder": "^4.2.0"
+    "drupal-code-builder/drupal-code-builder": "^4.2.0",
+    "laravel/prompts": "*"
   },
   "require-dev": {
     "symfony/var-dumper": "^3.2"
