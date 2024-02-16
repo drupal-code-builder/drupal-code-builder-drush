@@ -83,7 +83,7 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
     // See https://github.com/drush-ops/drush/issues/2907
     // TODO: Find a better way to pass this to the library.
     // TODO: Stop calling this 'data' in the library.
-    drush_set_option('data', $location);
+    // drush_set_option('data', $location);
   }
 
   /**
