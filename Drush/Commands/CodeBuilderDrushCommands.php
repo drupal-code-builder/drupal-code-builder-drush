@@ -1059,8 +1059,8 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
   protected function outputComponentFiles(OutputInterface $output, $component_dir, $files, $dry_run) {
     if (!$output->isQuiet()) {
       foreach ($files as $filename => $code) {
-        // TODO: styling!
-        $output->writeln("Proposed $filename:");
+        $this->io()->writeln("<fg=green>Proposed $filename:</>" . "\n");
+
         $output->write($code);
       }
     }
