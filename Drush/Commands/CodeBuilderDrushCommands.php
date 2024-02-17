@@ -10,6 +10,7 @@ use DrupalCodeBuilder\Definition\MergingGeneratorDefinition;
 use DrupalCodeBuilderDrush\Environment\DrushModuleBuilderDevel;
 use Drush\Commands\DrushCommands;
 use Drush\Drush;
+use Drush\Exceptions\CommandFailedException;
 use MutableTypedData\Data\DataItem;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -137,7 +138,7 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
   ) {
     // Interactive mode is required, bail otherwise.
     if (!$input->isInteractive()) {
-      throw new \Exception("The cb:module command must be run in interactive mode.");
+      throw new CommandFailedException("The cb:module command must be run in interactive mode.");
     }
 
     try {
