@@ -1,27 +1,17 @@
 This is a set of Drush commands for generating code with the Drupal Code Builder
 library (https://github.com/drupal-code-builder/drupal-code-builder).
 
-The 9.x branch works with Drush 9. For Drush 8, use the 8.x branch.
-
 ## Installation
 
-There are two ways to install this command:
+Install this command with Composer:
 
-- Composer installation as a Drush extension
-  1. Do `composer require drupal-code-builder/drupal-code-builder-drush` to
-    install this package and its dependencies. You will need your project to
-    use drupal-composer/drupal-project, or have your composer.josn configured
-    to place Drush extensions into drush/contrib.
-- Manual installation as Drush extension
-  1. Place this somewhere Drush will locate it as a command, such as
-    drush/contrib.
-  2. Do `composer require drupal-code-builder/drupal-code-builder` to install
-    the Drupal Coder Builder library.
+`composer require drupal-code-builder/drupal-code-builder-drush`
 
-Once this is installed, do `drush cbu`. This detects hooks, services, and plugin
+## Setup
+
+Once this is installed, do `drush cb:update`. This detects hooks, services, and plugin
 types in your Drupal site's codebase and analyses them for use with Drupal Code
 Builder.
-
 
 ## Usage
 
