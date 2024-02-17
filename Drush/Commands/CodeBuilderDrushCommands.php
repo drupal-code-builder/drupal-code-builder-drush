@@ -955,7 +955,7 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
    *   An array of module machine names.
    */
   protected function getModuleNames() {
-    return array_keys($this->getModuleList());
+    return array_keys($this->getModules());
   }
 
   /**
