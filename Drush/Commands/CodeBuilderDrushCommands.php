@@ -11,6 +11,7 @@ use DrupalCodeBuilderDrush\Environment\DrushModuleBuilderDevel;
 use Drush\Commands\DrushCommands;
 use Drush\Drush;
 use MutableTypedData\Data\DataItem;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\Table;
@@ -143,7 +144,10 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
       $task_handler_generate = \DrupalCodeBuilder\Factory::getTask('Generate', 'module');
     }
     catch (\DrupalCodeBuilder\Exception\SanityException $e) {
-      $this->handleSanityException($e);
+      // Show a message and end with failure.
+      $this->io()->error($this->getSanityLevelMessage($e));
+
+      return Command::FAILURE;
     }
 
     $existing_module_files = $this->getModuleFiles($module_name);
@@ -193,7 +197,12 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
       $task_handler_generate = \DrupalCodeBuilder\Factory::getTask('Generate', 'module');
     }
     catch (\DrupalCodeBuilder\Exception\SanityException $e) {
-      $this->handleSanityException($e);
+      // Set the required arguments to dummy value to silence a complaint about
+      // them.
+      $input->setArgument('module_name', 'made-up!');
+      $input->setArgument('component_type', 'made-up!');
+
+      return Command::FAILURE;
     }
 
     /** @var \MutableTypedData\Data\DataItem */
@@ -1364,6 +1373,22 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
         break;
     }
     throw new \Exception($message);
+  }
+
+  /**
+   * Gets a message to show for different levels of DCB sanity failure.
+   *
+   * @param \DrupalCodeBuilder\Exception\SanityException $e
+   *   The sanity exception.
+   *
+   * @return
+   *   The message string.
+   */
+  protected function getSanityLevelMessage(\DrupalCodeBuilder\Exception\SanityException $e): string {
+    return match ($e->getFailedSanityLevel()) {
+      'data_directory_exists' => "The component data directory could not be created or is not writable.",
+      'component_data_processed' => "No component data was found. Run 'drush cb:update' to process component data from your site's code files.",
+    };
   }
 
 }
