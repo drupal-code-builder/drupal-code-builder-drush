@@ -24,6 +24,7 @@ use function Laravel\Prompts\multisearch;
 use function Laravel\Prompts\text;
 use function Laravel\Prompts\search;
 use function Laravel\Prompts\select;
+use function Laravel\Prompts\suggest;
 
 /**
  * Provides commands for generating code with the Drupal Code Builder library.
@@ -214,13 +215,21 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
 
     // Get the module name if not provided.
     if (empty($input->getArgument('module_name'))) {
-      $module_names = $this->getModuleNames();
 
-      $question = new \Symfony\Component\Console\Question\Question('Enter the name of the module to either create or add to', 'my_module');
-      $question->setAutocompleterValues($module_names);
+      $module_name = suggest(
+        label: 'Enter the name of an existing module to add to it, or a new module name to create it',
+        required: true,
+        // This doesn't work as well as with Symfony -- you have to backspace
+        // to clear it :(
+        // default: 'my_module',
+        options: function ($input) {
+          $module_names = $this->getModuleNames();
 
-      $value = $this->io()->askQuestion($question);
-      $input->setArgument('module_name', $value);
+          return preg_grep("@$input@", $module_names);
+        },
+      );
+
+      $input->setArgument('module_name', $module_name);
     }
 
     // Determine whether the given module name is for an existing module.
