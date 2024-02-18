@@ -30,3 +30,6 @@ repositories that originally were the home of this command file: the drupal.org
 module_builder project, and a drush fork.
 They were extracted using git filter-branch, and reconstituted into a single
 history with git graft and git filter-branch.
+
+Version numbers start at 8.0.0 because the initial numbering scheme matched with
+Drush major version numbers, in the pre-Composer, pre-Semver era.
