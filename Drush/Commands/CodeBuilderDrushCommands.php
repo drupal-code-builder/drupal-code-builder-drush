@@ -190,7 +190,7 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
   }
 
   /**
-   * Get the component type if not provided.
+   * Gets the module name and component type if not provided.
    *
    * @hook interact cb:module
    */
