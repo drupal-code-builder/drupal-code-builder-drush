@@ -1074,6 +1074,93 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
       return;
     }
 
+    $table = new Table($output);
+    $table
+      ->setHeaderTitle('File status summary')
+      ->setHeaders(['Filename', 'Merge status', 'Git status']);
+
+    // If the component folder doesn't exist, we definitely know that no files
+    // are managed by git.
+    $check_git = file_exists($component_dir);
+
+    $files_exist = [];
+    foreach ($files as $filename => $code_file) {
+      $needs_warning = FALSE;
+
+      if (!$code_file->fileExists()) {
+        // Brand new file, no warning needed.
+        $merge_message = 'New';
+      }
+      elseif ($code_file->fileIsMerged()) {
+        // Exists, but merged.
+        $merge_message = 'Merged';
+      }
+      else {
+        // Exists, and not merged.
+        $merge_message = 'Overwrite';
+      }
+
+      if (!$code_file->fileExists()) {
+        $git_message = 'New';
+      }
+      else {
+        $git_message = 'Unmanaged';
+
+        if ($check_git) {
+          // Perform the 'git status' command in the module folder, to allow for
+          // the case where the module has its own git repository.
+          $command = "cd {$component_dir} && git status {$filename} --porcelain";
+          $descriptorspec = [
+            0 => ["pipe", "r"],
+            1 => ["pipe", "w"],
+            2 => ["pipe", "w"],
+          ];
+          $pipes = [];
+          $resource = proc_open($command, $descriptorspec, $pipes);
+
+          $git_exec_status = stream_get_contents($pipes[1]);
+          $git_exec_error  = stream_get_contents($pipes[2]);
+
+          proc_close($resource);
+
+          if (!empty($git_exec_error)) {
+            // An error means there is no git repository anywhere above the file
+            // location.
+            $git_message = 'Unmanaged';
+
+            // Don't bother making further calls to check git since there's no
+            // repository.
+            $check_git = FALSE;
+          }
+          elseif (empty($git_exec_status)) {
+            // Nothing from git means that the file is clean.
+            // NOOO could mean unmanaged because no git AT ALL
+            $git_message = 'OK';
+          }
+          else {
+            $git_status_code = substr($git_exec_status, 0, 2);
+
+            $git_message = match ($git_status_code) {
+              '??' => 'Unmanaged',
+              ' M',
+              // Staged or partially staged file.
+              'A ',
+              'M ',
+              'MM' => 'Uncommitted changes!',
+            };
+          }
+        }
+      }
+
+      $table->addRow([
+        $filename,
+        $merge_message,
+        $git_message,
+      ]);
+    }
+
+    $table->render();
+
     $files_exist = [];
     foreach ($files as $filename => $code) {
       $filepath = $component_dir . '/' . $filename;
