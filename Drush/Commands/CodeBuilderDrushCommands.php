@@ -253,6 +253,7 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
         // TODO: some of these labels are plurals! Should they be?
         $options[$property_name] = $component_data->{$property_name}->getLabel();
       }
+      natcasesort($options);
 
       if ($module_exists) {
         $prompt = dt("This module already exists. Choose component types to add to it");
