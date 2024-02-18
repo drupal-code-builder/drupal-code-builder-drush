@@ -1161,6 +1161,21 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
 
     $table->render();
 
+    $write_mode = select(
+      label: 'Write files?',
+      default: 'all',
+      options: [
+        'all' => 'Write all files',
+        'prompt' => 'Prompt for overwriting files',
+        'no' => "Don't write any files",
+      ],
+    );
+
+    // If no file writing requested, we're done.
+    if ($write_mode == 'no') {
+      return;
+    }
+
     $files_exist = [];
     foreach ($files as $filename => $code) {
       $filepath = $component_dir . '/' . $filename;
@@ -1168,7 +1183,7 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
       // - prompt for overwrite
       // - check git status before overwrite and overwrite if git clean
       // - force overwrite
-      if (file_exists($filepath)) {
+      if (file_exists($filepath) && $write_mode == 'prompt') {
         $question = new \Symfony\Component\Console\Question\ConfirmationQuestion(
           dt('File ' . $filename . ' exists. Overwrite this file?'),
           FALSE
