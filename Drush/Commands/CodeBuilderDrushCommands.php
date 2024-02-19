@@ -448,7 +448,7 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
           // TODO: setting this to $data->isRequired() is weird -- are some
           // booleans set to required when FALSE is an OK answer?
           required: FALSE,
-          default: $data->value,
+          default: (bool) $data->value,
         );
 
         $data->set($value);
