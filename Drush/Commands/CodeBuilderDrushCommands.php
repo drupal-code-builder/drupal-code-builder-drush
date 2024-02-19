@@ -492,6 +492,7 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
               label: 'Enter the ' . $data->getLabel(),
               options: $options_callback,
               required: $data->isRequired(),
+              scroll: 20,
             );
 
             $data->set($value);
@@ -500,6 +501,7 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
             $value = search(
               label: 'Enter the ' . $data->getLabel(),
               options: $options_callback,
+              scroll: 20,
             );
 
             // Babysit stupid empty value.
@@ -526,6 +528,7 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
               label: 'Enter the ' . $data->getLabel(),
               options: $options,
               required: $data->isRequired(),
+              // scroll: 20,
             );
 
             $data->set($value);
@@ -534,6 +537,7 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
             $value = select(
               label: 'Enter the ' . $data->getLabel(),
               options: $options,
+              scroll: 20,
             );
           }
 
