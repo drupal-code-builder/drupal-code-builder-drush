@@ -552,12 +552,31 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
           $data->set($value);
         }
         else {
+          if ($validators = $data->getValidators()) {
+            $validation = function ($value) use ($data) {
+              $data->set($value);
+              $violations = $data->validate();
+              if (empty($violations)) {
+                return NULL;
+              }
+
+              $messages = [];
+              foreach ($violations as $address => $violation_messages) {
+                foreach ($violation_messages as $violation_message) {
+                  $messages[] = $violation_message;
+                }
+              }
+              return implode(', ', $messages);
+            };
+          }
+
           $data->applyDefault();
 
           $value = text(
             label: "Enter the {$data->getLabel()}",
             required: $data->isRequired(),
             default: $data->value ?? '',
+            validate: $validation,
           );
 
           if (!empty($value)) {
