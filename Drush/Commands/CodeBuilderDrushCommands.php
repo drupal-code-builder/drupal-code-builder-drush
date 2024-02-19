@@ -479,7 +479,9 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
               $results[' '] = '-- None --';
             }
             foreach ($matched_keys as $key) {
-              $results[$key] = $key . ' - ' . $options[$key]->getLabel();
+              // TODO: See https://github.com/drupal-code-builder/drupal-code-builder/issues/334.
+              $label = $options[$key]->getLabel();
+              $results[$key] = $key . (($key == $label) ? '' : ' - ' . $label);
             }
 
             return $results;
