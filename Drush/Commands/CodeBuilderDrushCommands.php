@@ -157,10 +157,12 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
 
     $extension_base_path = $this->getComponentFolder('module', $module_name, $options['parent']);
 
-    $analyse_extension_task = \DrupalCodeBuilder\Factory::getTask('AnalyseExtension');
-    $existing_extension = $analyse_extension_task->createExtension('module', $extension_base_path);
+    if ($this->moduleExists($module_name)) {
+      $analyse_extension_task = \DrupalCodeBuilder\Factory::getTask('AnalyseExtension');
+      $existing_extension = $analyse_extension_task->createExtension('module', $extension_base_path);
+    }
 
-    $files = $task_handler_generate->generateComponent($component_data, [], NULL, $existing_extension);
+    $files = $task_handler_generate->generateComponent($component_data, [], NULL, $existing_extension ?? NULL);
 
     $this->outputComponentFiles($output, $extension_base_path, $files, $options['dry-run']);
   }
