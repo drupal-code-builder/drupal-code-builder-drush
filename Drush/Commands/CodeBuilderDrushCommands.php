@@ -225,9 +225,11 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
         // default: 'my_module',
         options: function ($input) {
           $module_names = $this->getModuleNames();
+          sort($module_names);
 
           return preg_grep("@$input@", $module_names);
         },
+        scroll: 20,
       );
 
       $input->setArgument('module_name', $module_name);
