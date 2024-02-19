@@ -237,7 +237,8 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
     $module_name = $input->getArgument('module_name');
     $module_exists = $this->moduleExists($module_name);
 
-    $subcomponent_property_names = $this->getSubComponentPropertyNames($component_data);
+    $subcomponent_property_options = $this->getSubComponentPropertyNames($component_data);
+    $subcomponent_property_names = array_keys($subcomponent_property_options);
 
     // Get the component type if not provided.
     if (empty($input->getArgument('component_type'))) {
@@ -249,11 +250,7 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
         $options['module'] = 'Module only';
       }
 
-      foreach ($subcomponent_property_names as $property_name) {
-        // TODO: some of these labels are plurals! Should they be?
-        $options[$property_name] = $component_data->{$property_name}->getLabel();
-      }
-      natcasesort($options);
+      $options += $subcomponent_property_options;
 
       if ($module_exists) {
         $prompt = dt("This module already exists. Choose component types to add to it");
@@ -330,30 +327,34 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
   }
 
   /**
-   * Gets the properties from a data item which we count as subcomponents.
+   * Gets the names of data properties which we count as subcomponents.
    *
    * @param $component_data
-   *  The component data.
+   *  The root component data.
    *
    * @return
-   *  An array of the property names which are subcomponents.
+   *  An associative array whose keys are the property names which are
+   *  subcomponents, and whose values are the property labels. The array is
+   *  sorted by the label.
    */
-  protected function getSubComponentPropertyNames(DataItem $component_data) {
+  protected function getSubComponentPropertyNames(DataItem $component_data): array {
     foreach ($component_data as $property_name => $property_data) {
       if ($property_data->isComplex()) {
-        $return[] = $property_name;
+        $return[$property_name] = $property_data->getLabel();
         continue;
       }
       // Bit of a hack: non-complex properties that request generators.
       if (in_array(get_class($property_data->getDefinition()), [MergingGeneratorDefinition::class, DeferredGeneratorDefinition::class])) {
-        $return[] = $property_name;
+        $return[$property_name] = $property_data->getLabel();
         continue;
       }
     }
 
     // Total hack: hooks.
     // TODO: This won't work when we support other root component types!
-    $return[] = 'hooks';
+    $return['hooks'] = $component_data->hooks->getLabel();
+
+    natcasesort($return);
 
     return $return;
   }
