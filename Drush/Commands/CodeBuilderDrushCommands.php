@@ -582,7 +582,7 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
             label: "Enter the {$data->getLabel()}",
             required: $data->isRequired(),
             default: $data->value ?? '',
-            validate: $validation,
+            validate: $validation ?? NULL,
           );
 
           if (!empty($value)) {
