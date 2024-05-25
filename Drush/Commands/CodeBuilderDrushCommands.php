@@ -303,10 +303,9 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
       // Mark the subcomponents that weren't selected.
       $properties_to_skip = array_merge($properties_to_skip, array_diff($subcomponent_property_names, $component_types));
     }
-    // Skip the root_name, since we have already got it.
-    $properties_to_skip[] = 'root_name';
 
     // Set things to internal so the use is not prompted for them.
+    // Skip the root_name, since we have already got it.
     $component_data->root_name->setInternal(TRUE);
 
     foreach ($properties_to_skip as $property_name) {
@@ -314,7 +313,9 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
 
       // ARRGH babysit the annoying MTD bug with single-valued complex data
       // getting instantiated once you look at it!
-      $component_data->removeItem($property_name);
+      if ($component_data->isComplex()) {
+        $component_data->removeItem($property_name);
+      }
     }
 
     // Collect data for the requested components.
