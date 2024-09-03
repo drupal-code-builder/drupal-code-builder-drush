@@ -11,7 +11,7 @@
   },
   "license": "GPL-2.0+",
   "require": {
-    "drush/drush": "^10.5 || ^11 || ^12",
+    "drush/drush": "^10.5 || ^11 || ^12 || ^13",
     "drupal-code-builder/drupal-code-builder": "^4.2.0",
     "laravel/prompts": "*"
   },
