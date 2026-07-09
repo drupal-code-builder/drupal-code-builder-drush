@@ -1083,7 +1083,7 @@ class CodeBuilderDrushCommands extends DrushCommands implements ConfigAwareInter
    *  The output.
    * @param $component_dir
    *  The base folder for the component. May or may not exist.
-   * @param $filename
+   * @param $files
    *  The array of files to write. Keys are filenames relative to the
    *  $component_dir, values are strings for the file contents.
    * @param $dry_run
