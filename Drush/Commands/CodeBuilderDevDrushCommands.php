@@ -56,33 +56,72 @@ class CodeBuilderDevDrushCommands extends DrushCommands {
 
   /**
    * Outputs the data for a single collect job.
-   *
-   * TODO: Make this a bit nicer - needs a numeric argument!
    */
   #[\Drush\Attributes\Command(name: 'cb-update-devel', aliases: ['cbud'])]
-  #[\Drush\Attributes\Argument(name: 'job', description: 'Numeric key of the collect job to process in the job list array.')]
+  #[\Drush\Attributes\Argument(name: 'collector_name', description: 'The short class name of the collector helper task. Omit for a prompt.')]
+  #[\Drush\Attributes\Argument(name: 'job', description: 'An idenfitier of the collect job to process in the job list array. Omit for a prompt.')]
   #[\Drush\Attributes\Help(hidden: true)]
   #[\Drush\Attributes\Bootstrap(level: DrupalBootLevels::FULL)]
-  public function commandTestCollect(OutputInterface $output, int $job) {
+  public function commandTestCollect(OutputInterface $output, string $collector_name = NULL, string $job = NULL) {
     $drupal_root = Drush::bootstrapManager()->getRoot();
     $drupal_version = Drush::bootstrap()->getVersion($drupal_root);
 
     \DrupalCodeBuilder\Factory::setEnvironmentLocalClass('Drush')
       ->setCoreVersionNumber($drupal_version);
 
-    $task_handler_collect = \DrupalCodeBuilder\Factory::getTask('Testing\CollectTesting');
+    // Get the Collect task, and hack out of it the list of Collect task
+    // helpers.
+    $collect = \DrupalCodeBuilder\Factory::getTask('Collect');
+    $collect_reflection = new \ReflectionClass($collect);
+    $collectors_reflection = $collect_reflection->getProperty('collectors');
+    $collectors = $collectors_reflection->getvalue($collect);
+    // Remove the special metadata collector.
+    unset($collectors['Collect\MetadataCollector']);
 
-    $job_list = $task_handler_collect->getJobList();
+    // Make an array of options, short class name => Task name.
+    $collectors_names = array_keys($collectors);
+    $collectors_options = array_combine($collectors_names, array_map(fn ($name) => explode('\\', $name)[1], $collectors_names));
 
-    if (!isset($job_list[$job])) {
-      throw new \InvalidArgumentException("Job $job not found.");
+    if ($collector_name) {
+      // If a collector was specified, try matching it to a task name,
+      // and then a short class name.
+      if (!isset($collectors[$collector_name])) {
+        $collector_name = array_search($collector_name, $collectors_options);
+        if (!$collector_name) {
+          throw new \Exception("Bad collector name.");
+        }
+      }
+    }
+    else {
+      // If no collector was specified, ask for one.
+      $collector_name = $this->io()->select('Select collector', $collectors_options, required: TRUE, scroll: count($collectors_options));
     }
 
-    // Get the helper from the DCB container.
-    $collector_helper = \DrupalCodeBuilder\Factory::getContainer()->get($job_list[$job]['collector']);
-    $job_data = $collector_helper->collect([$job_list[$job]]);
+    $task_handler_collect = $collectors[$collector_name];
+    $job_list = $task_handler_collect->getJobList();
 
-    dump($job_data);
+    // If the collector returns a job list, filter it down, either with the
+    // given job parameter, or by asking the user.
+    if ($job_list) {
+      // The values in jobs are different for each collector. Assume that
+      // the first key is a reasonably useful (and unique!) value for the UI!
+      $job_list_values = array_map(fn ($job_item) => $job_item[array_key_first($job_item)], $job_list);
+      $job_list_lookup = array_flip($job_list_values);
+
+      if (!$job) {
+        $job_list_options = array_combine($job_list_values, $job_list_values);
+
+        // WTF, you can't get a numeric index back from a numeric options array.
+        $job = $this->io()->select('Select collector', $job_list_options, required: TRUE, scroll: count($job_list_options));
+      }
+
+      $job_index = $job_list_lookup[$job];
+      $job_list = [$job_index => $job_list[$job_index]];
+    }
+
+    $data = $task_handler_collect->collect($job_list);
+
+    dump($data);
 
     return TRUE;
   }
