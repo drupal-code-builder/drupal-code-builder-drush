@@ -62,7 +62,7 @@ class CodeBuilderDevDrushCommands extends DrushCommands {
   #[\Drush\Attributes\Argument(name: 'job', description: 'An idenfitier of the collect job to process in the job list array. Omit for a prompt.')]
   #[\Drush\Attributes\Help(hidden: true)]
   #[\Drush\Attributes\Bootstrap(level: DrupalBootLevels::FULL)]
-  public function commandTestCollect(OutputInterface $output, string $collector_name = NULL, string $job = NULL) {
+  public function commandTestCollect(OutputInterface $output, ?string $collector_name = NULL, ?string $job = NULL) {
     $drupal_root = Drush::bootstrapManager()->getRoot();
     $drupal_version = Drush::bootstrap()->getVersion($drupal_root);
 
